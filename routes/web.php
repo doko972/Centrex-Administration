@@ -64,12 +64,25 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
 Route::middleware(['auth', 'client'])->prefix('client')->name('client.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
+    
+    // Accès direct (ancienne méthode)
     Route::get('/centrex/{centrex}/access', [\App\Http\Controllers\Client\CentrexAccessController::class, 'access'])->name('centrex.access');
-
-        // Routes pour le reverse proxy (nouvelle méthode sécurisée)
+    
+    // Routes pour le reverse proxy Laravel (ne fonctionne pas bien)
     Route::get('/centrex/{centrex}/view', [\App\Http\Controllers\Client\CentrexProxyController::class, 'show'])->name('centrex.view');
-    Route::any('/centrex/{centrex}/proxy/{path?}', [\App\Http\Controllers\Client\CentrexProxyController::class, 'proxy'])
-        ->where('path', '.*')
+    Route::any('/centrex/{centrex}/proxy/{any?}', [\App\Http\Controllers\Client\CentrexProxyController::class, 'proxy'])
+        ->where('any', '.*')
         ->name('centrex.proxy');
+    
+    // NOUVEAU : Proxy Nginx (meilleure solution)
+    Route::get('/centrex/{centrex}/nginx-proxy', function(\App\Models\Centrex $centrex) {
+        $user = Auth::user();
+        $client = $user->client;
+        
+        if (!$client->centrex->contains($centrex->id)) {
+            abort(403, 'Vous n\'avez pas accès à ce centrex.');
+        }
+        
+        return view('client.centrex-nginx-proxy', compact('centrex'));
+    })->name('centrex.nginx-proxy');
 });

@@ -7,6 +7,7 @@ use App\Models\Centrex;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class CentrexProxyController extends Controller
 {
@@ -28,16 +29,14 @@ class CentrexProxyController extends Controller
             abort(403, 'Ce centrex n\'est pas disponible actuellement.');
         }
 
-        // Construire l'URL du proxy
-        $proxyUrl = route('client.centrex.proxy', $centrex);
-
-        return view('client.centrex-proxy', compact('centrex', 'proxyUrl'));
+        // Au lieu d'utiliser l'iframe, charger directement le contenu
+        return $this->proxy($request ?? request(), $centrex);
     }
 
     /**
      * Proxifier les requêtes vers FreePBX
      */
-    public function proxy(Request $request, Centrex $centrex)
+    public function proxy(Request $request, Centrex $centrex, $any = null)
     {
         $user = Auth::user();
         $client = $user->client;
@@ -50,39 +49,49 @@ class CentrexProxyController extends Controller
         // Construire l'URL cible
         $baseUrl = "http://{$centrex->ip_address}";
 
-        // Extraire le chemin après /proxy/
-        $fullPath = $request->path();
-        $proxyPrefix = "client/centrex/{$centrex->id}/proxy";
+        // Récupérer le chemin demandé
+        $path = $any ? '/' . $any : '/';
 
-        if (strpos($fullPath, $proxyPrefix) === 0) {
-            $path = substr($fullPath, strlen($proxyPrefix));
-        } else {
-            $path = '';
-        }
-
-        // Si le chemin est vide, utiliser /
-        if (empty($path) || $path === '/') {
-            $path = '/';
+        // Ajouter les query parameters
+        $queryString = $request->getQueryString();
+        if ($queryString) {
+            $path .= '?' . $queryString;
         }
 
         $targetUrl = $baseUrl . $path;
 
-        // Ajouter les query parameters
-        if ($request->getQueryString()) {
-            $targetUrl .= '?' . $request->getQueryString();
-        }
+        // DEBUG : Logger toutes les requêtes
+        Log::info('Proxy Request Full:', [
+            'method' => $request->method(),
+            'any' => $any,
+            'path' => $path,
+            'targetUrl' => $targetUrl,
+            'queryString' => $request->getQueryString(),
+            'postData' => $request->all()
+        ]);
 
         try {
-            // Faire la requête vers FreePBX
-            $response = Http::withOptions([
+            // Configuration de base
+            $httpClient = Http::withOptions([
                 'verify' => false,
                 'timeout' => 30,
             ])
                 ->withHeaders([
                     'User-Agent' => 'Centrex-Dashboard-Proxy/1.0',
                 ])
-                ->withBasicAuth($centrex->login, $centrex->password)
-                ->{strtolower($request->method())}($targetUrl, $request->all());
+                ->withBasicAuth($centrex->login, $centrex->password);
+
+            // Selon la méthode HTTP
+            $method = strtolower($request->method());
+
+            if ($method === 'post') {
+                // Pour POST, envoyer les données comme formulaire
+                $response = $httpClient->asForm()->post($targetUrl, $request->all());
+            } elseif ($method === 'get') {
+                $response = $httpClient->get($targetUrl);
+            } else {
+                $response = $httpClient->{$method}($targetUrl, $request->all());
+            }
 
             $body = $response->body();
             $contentType = $response->header('Content-Type') ?? 'text/html';
@@ -91,19 +100,42 @@ class CentrexProxyController extends Controller
             if (strpos($contentType, 'text/html') !== false) {
                 $proxyBase = url("client/centrex/{$centrex->id}/proxy");
 
-                // Remplacer les chemins absolus
                 // Remplacer href="/..."
-                $body = preg_replace('/href=["\']\/([^"\']*)["\']/i', 'href="' . $proxyBase . '/$1"', $body);
+                $body = preg_replace('/href=["\']\/((?!http)[^"\']*)["\']/i', 'href="' . $proxyBase . '/$1"', $body);
 
                 // Remplacer src="/..."
-                $body = preg_replace('/src=["\']\/([^"\']*)["\']/i', 'src="' . $proxyBase . '/$1"', $body);
+                $body = preg_replace('/src=["\']\/((?!http)[^"\']*)["\']/i', 'src="' . $proxyBase . '/$1"', $body);
 
                 // Remplacer action="/..."
-                $body = preg_replace('/action=["\']\/([^"\']*)["\']/i', 'action="' . $proxyBase . '/$1"', $body);
+                $body = preg_replace('/action=["\']\/((?!http)[^"\']*)["\']/i', 'action="' . $proxyBase . '/$1"', $body);
 
-                // Ajouter une base tag pour les chemins relatifs
-                $baseTag = '<base href="' . $proxyBase . '/">';
+                // Ajouter une base tag
+                $baseTag = '<base href="' . $proxyBase . '/admin/">';
                 $body = preg_replace('/<head>/i', '<head>' . $baseTag, $body, 1);
+
+                // NOUVEAU : Injecter un script pour intercepter les requêtes AJAX
+                $ajaxInterceptor = '<script>
+    (function() {
+        var proxyBase = "' . $proxyBase . '";
+        var origOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url) {
+            if (url.startsWith("/")) {
+                url = proxyBase + url;
+            }
+            return origOpen.apply(this, [method, url]);
+        };
+        
+        var origFetch = window.fetch;
+        window.fetch = function(url, options) {
+            if (typeof url === "string" && url.startsWith("/")) {
+                url = proxyBase + url;
+            }
+            return origFetch.apply(this, [url, options]);
+        };
+    })();
+    </script>';
+
+                $body = preg_replace('/<\/head>/i', $ajaxInterceptor . '</head>', $body, 1);
             }
 
             // Retourner la réponse modifiée

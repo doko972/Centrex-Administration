@@ -61,8 +61,9 @@
                     </div>
 
                     <div style="display: flex; gap: 0.5rem;">
-                        <a href="{{ route('client.centrex.view', $item) }}" class="btn btn-primary" style="flex: 1;">
-                            Proxy sécurisé 🔒
+                        <a href="{{ route('client.centrex.nginx-proxy', $item) }}" class="btn btn-primary"
+                            style="width: 100%;">
+                            Accéder au Centrex 🔒
                         </a>
                         <a href="{{ route('client.centrex.access', $item) }}" class="btn btn-outline btn-sm"
                             style="flex: 1;">
