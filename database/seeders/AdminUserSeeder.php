@@ -17,12 +17,12 @@ class AdminUserSeeder extends Seeder
         User::create([
             'name' => 'Admin',
             'email' => 'admin@centrex.com',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('Hrtelecoms10#'),
             'role' => 'admin',
         ]);
 
         $this->command->info('Utilisateur admin créé avec succès !');
         $this->command->info('Email: admin@centrex.com');
-        $this->command->info('Password: password');
+        $this->command->info('Password: Hrtelecoms10#');
     }
 }
