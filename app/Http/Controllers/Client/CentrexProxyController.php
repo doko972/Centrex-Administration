@@ -14,7 +14,7 @@ class CentrexProxyController extends Controller
     /**
      * Afficher la page avec iframe du centrex
      */
-    public function show(Centrex $centrex)
+    public function show(Request $request, Centrex $centrex)
     {
         $user = Auth::user();
         $client = $user->client;
@@ -30,7 +30,7 @@ class CentrexProxyController extends Controller
         }
 
         // Au lieu d'utiliser l'iframe, charger directement le contenu
-        return $this->proxy($request ?? request(), $centrex);
+        return $this->proxy($request, $centrex);
     }
 
     /**
@@ -74,12 +74,13 @@ class CentrexProxyController extends Controller
             // Configuration de base
             $httpClient = Http::withOptions([
                 'verify' => false,
-                'timeout' => 30,
+                'timeout' => 60, // Augmenté à 60s pour les assets lourds
+                'connect_timeout' => 10,
             ])
                 ->withHeaders([
                     'User-Agent' => 'Centrex-Dashboard-Proxy/1.0',
                 ])
-                ->withBasicAuth($centrex->login, $centrex->password);
+                ->withBasicAuth($centrex->login, $centrex->getDecryptedPassword());
 
             // Selon la méthode HTTP
             $method = strtolower($request->method());
@@ -95,6 +96,23 @@ class CentrexProxyController extends Controller
 
             $body = $response->body();
             $contentType = $response->header('Content-Type') ?? 'text/html';
+
+            // Détecter si c'est un fichier asset (JS, CSS, image, etc.)
+            $isAsset = preg_match('/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|map)$/i', $path) ||
+                       strpos($contentType, 'javascript') !== false ||
+                       strpos($contentType, 'css') !== false ||
+                       strpos($contentType, 'image/') !== false ||
+                       strpos($contentType, 'font/') !== false ||
+                       strpos($contentType, 'application/font') !== false;
+
+            // Si c'est un asset, retourner tel quel sans modification
+            if ($isAsset) {
+                return response($body, $response->status())
+                    ->withHeaders([
+                        'Content-Type' => $contentType,
+                        'Cache-Control' => 'public, max-age=86400', // Cache 24h
+                    ]);
+            }
 
             // Si c'est du HTML, réécrire les chemins
             if (strpos($contentType, 'text/html') !== false) {
@@ -113,7 +131,9 @@ class CentrexProxyController extends Controller
                 $baseTag = '<base href="' . $proxyBase . '/admin/">';
                 $body = preg_replace('/<head>/i', '<head>' . $baseTag, $body, 1);
 
-                // NOUVEAU : Injecter un script pour intercepter les requêtes AJAX
+                // Injecter le CSS personnalisé HRTelecoms + script AJAX interceptor
+                $customCSS = '<link rel="stylesheet" href="' . url('/css/freepbx-custom.css') . '" type="text/css">';
+
                 $ajaxInterceptor = '<script>
     (function() {
         var proxyBase = "' . $proxyBase . '";
@@ -135,7 +155,9 @@ class CentrexProxyController extends Controller
     })();
     </script>';
 
-                $body = preg_replace('/<\/head>/i', $ajaxInterceptor . '</head>', $body, 1);
+                // Injecter le CSS et le script en une seule fois avant </head>
+                $injections = $customCSS . "\n" . $ajaxInterceptor;
+                $body = preg_replace('/<\/head>/i', $injections . '</head>', $body, 1);
             }
 
             // Retourner la réponse modifiée

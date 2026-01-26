@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CentrexController;
 use App\Http\Controllers\Admin\ClientCentrexController;
 use App\Http\Controllers\Client\DashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Client\NginxProxyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,7 +32,8 @@ Route::get('/', function () {
 // Routes d'authentification
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])
+        ->middleware('throttle:5,1'); // Max 5 tentatives par minute par IP
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -68,21 +70,16 @@ Route::middleware(['auth', 'client'])->prefix('client')->name('client.')->group(
     // Accès direct (ancienne méthode)
     Route::get('/centrex/{centrex}/access', [\App\Http\Controllers\Client\CentrexAccessController::class, 'access'])->name('centrex.access');
     
-    // Routes pour le reverse proxy Laravel (ne fonctionne pas bien)
+    // Routes pour le reverse proxy Laravel
     Route::get('/centrex/{centrex}/view', [\App\Http\Controllers\Client\CentrexProxyController::class, 'show'])->name('centrex.view');
-    Route::any('/centrex/{centrex}/proxy/{any?}', [\App\Http\Controllers\Client\CentrexProxyController::class, 'proxy'])
+    Route::any('/centrex/{centrex}/proxy/{any}', [\App\Http\Controllers\Client\CentrexProxyController::class, 'proxy'])
         ->where('any', '.*')
         ->name('centrex.proxy');
+    // Route pour le proxy sans chemin (page d'accueil)
+    Route::any('/centrex/{centrex}/proxy', [\App\Http\Controllers\Client\CentrexProxyController::class, 'proxy'])
+        ->name('centrex.proxy.root');
     
     // NOUVEAU : Proxy Nginx (meilleure solution)
-    Route::get('/centrex/{centrex}/nginx-proxy', function(\App\Models\Centrex $centrex) {
-        $user = Auth::user();
-        $client = $user->client;
-        
-        if (!$client->centrex->contains($centrex->id)) {
-            abort(403, 'Vous n\'avez pas accès à ce centrex.');
-        }
-        
-        return view('client.centrex-nginx-proxy', compact('centrex'));
-    })->name('centrex.nginx-proxy');
+    Route::get('/centrex/{centrex}/nginx-proxy', [NginxProxyController::class, 'show'])
+        ->name('centrex.nginx-proxy');
 });

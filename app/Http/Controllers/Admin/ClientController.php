@@ -36,11 +36,13 @@ class ClientController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8',
+            'password' => 'required|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]+$/',
             'company_name' => 'required|string|max:255',
             'contact_name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
+        ], [
+            'password.regex' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&#).',
         ]);
 
         DB::transaction(function () use ($validated) {
@@ -48,7 +50,7 @@ class ClientController extends Controller
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
+                'password' => $validated['password'], // Le cast 'hashed' du modèle User gère le hashage automatiquement
                 'role' => 'client',
             ]);
 

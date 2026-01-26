@@ -25,6 +25,10 @@ class Centrex extends Model
         'is_active',
     ];
 
+    protected $hidden = [
+        'password', // Ne jamais exposer le mot de passe chiffré dans toArray/toJson
+    ];
+
     protected $casts = [
         'is_active' => 'boolean',
         'last_check' => 'datetime',
@@ -39,11 +43,12 @@ class Centrex extends Model
     }
 
     /**
-     * Déchiffrer le mot de passe à la lecture
+     * Méthode pour obtenir le mot de passe déchiffré
+     * (Ne pas utiliser un accessor automatique pour éviter l'exposition dans toArray/toJson)
      */
-    public function getPasswordAttribute($value)
+    public function getDecryptedPassword()
     {
-        return Crypt::decryptString($value);
+        return Crypt::decryptString($this->attributes['password']);
     }
 
     /**

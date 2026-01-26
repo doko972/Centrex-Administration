@@ -40,9 +40,9 @@
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
                         <div
                             style="flex: 1; padding: 0.5rem; background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--border-radius); font-family: monospace; filter: blur(5px); user-select: none; pointer-events: none;">
-                            {{ $centrex->password }}
+                            {{ $centrex->getDecryptedPassword() }}
                         </div>
-                        {{-- <button onclick="copyText('{{ $centrex->password }}', this)"
+                        {{-- <button onclick="copyText('{{ $centrex->getDecryptedPassword() }}', this)"
                             class="btn btn-sm btn-secondary">Copier</button> --}}
                     </div>
                 </div>
