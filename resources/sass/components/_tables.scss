@@ -1,0 +1,121 @@
+// ============================
+// TABLES - Design System
+// ============================
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--border-radius-lg);
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table thead {
+  background: var(--gradient-subtle);
+}
+
+.table th {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+
+  &:first-child {
+    border-radius: var(--border-radius) 0 0 0;
+  }
+
+  &:last-child {
+    border-radius: 0 var(--border-radius) 0 0;
+  }
+}
+
+.table td {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color-light);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: background-color var(--transition-fast);
+
+  &:hover {
+    background-color: var(--bg-hover);
+  }
+
+  &:last-child td {
+    border-bottom: none;
+  }
+}
+
+// Striped table
+.table-striped tbody tr:nth-child(even) {
+  background-color: var(--bg-secondary);
+
+  &:hover {
+    background-color: var(--bg-hover);
+  }
+}
+
+// Bordered table
+.table-bordered {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+
+  th, td {
+    border: 1px solid var(--border-color-light);
+  }
+}
+
+// Compact table
+.table-compact {
+  th, td {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+// Table with actions column
+.table .actions-cell {
+  text-align: right;
+  white-space: nowrap;
+
+  .btn {
+    margin-left: var(--spacing-xs);
+  }
+}
+
+// Centered cell
+.table .text-center {
+  text-align: center;
+}
+
+.table .text-right {
+  text-align: right;
+}
+
+// Empty state
+.table-empty {
+  text-align: center;
+  padding: var(--spacing-3xl) var(--spacing-xl);
+  color: var(--text-secondary);
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-md);
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+  }
+}

@@ -1,70 +1,95 @@
 @extends('layouts.app')
 
 @section('content')
-<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-    <h1>Gestion des Centrex</h1>
-    <div>
-        <a href="{{ route('admin.dashboard') }}" class="btn btn-outline">← Retour</a>
-        <a href="{{ route('admin.centrex.create') }}" class="btn btn-primary">+ Nouveau Centrex</a>
+<div class="page-header">
+    <h1 class="page-title">
+        Gestion des Centrex
+        <small>{{ $centrex->count() }} centrex enregistré(s)</small>
+    </h1>
+    <div class="page-actions">
+        <a href="{{ route('admin.dashboard') }}" class="btn btn-ghost">
+            ← Retour
+        </a>
+        <a href="{{ route('admin.centrex.create') }}" class="btn btn-primary">
+            ➕ Nouveau Centrex
+        </a>
     </div>
 </div>
 
 @if(session('success'))
-    <div style="background-color: var(--color-success); color: white; padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem;">
-        {{ session('success') }}
+    <div class="alert alert-success mb-lg">
+        <span class="alert-icon">✓</span>
+        <div class="alert-content">
+            <p class="alert-message">{{ session('success') }}</p>
+        </div>
     </div>
 @endif
 
-<div class="card">
-    @if($centrex->count() > 0)
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
-            @foreach($centrex as $item)
-                <div style="border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 1.5rem; transition: all 0.3s ease;">
-                    @if($item->image)
-                        <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->name }}" style="width: 100%; height: 150px; object-fit: cover; border-radius: var(--border-radius); margin-bottom: 1rem;">
+@if($centrex->count() > 0)
+    <div class="grid grid-auto-lg">
+        @foreach($centrex as $item)
+            <div class="card card-interactive">
+                @if($item->image)
+                    <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->name }}" class="centrex-image">
+                @else
+                    <div class="centrex-placeholder">
+                        📞
+                    </div>
+                @endif
+
+                <h3 class="centrex-title">{{ $item->name }}</h3>
+
+                <p class="text-sm text-secondary mb-md">
+                    {{ $item->ip_address }}:{{ $item->port }}
+                </p>
+
+                <div class="d-flex gap-sm flex-wrap mb-md">
+                    @if($item->status === 'online')
+                        <span class="status status-online">En ligne</span>
+                    @elseif($item->status === 'offline')
+                        <span class="status status-offline">Hors ligne</span>
                     @else
-                        <div style="width: 100%; height: 150px; background-color: var(--bg-tertiary); border-radius: var(--border-radius); margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; color: var(--text-tertiary);">
-                            Aucune image
-                        </div>
+                        <span class="status status-maintenance">Maintenance</span>
                     @endif
 
-                    <h3 style="margin-bottom: 0.5rem;">{{ $item->name }}</h3>
-                    <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
-                        {{ $item->ip_address }}:{{ $item->port }}
-                    </p>
-
-                    <div style="margin-bottom: 1rem;">
-                        @if($item->status === 'online')
-                            <span style="background-color: var(--color-success); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem;">● En ligne</span>
-                        @elseif($item->status === 'offline')
-                            <span style="background-color: var(--color-danger); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem;">● Hors ligne</span>
-                        @else
-                            <span style="background-color: var(--color-warning); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem;">● Maintenance</span>
-                        @endif
-
-                        @if(!$item->is_active)
-                            <span style="background-color: var(--color-danger); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; margin-left: 0.5rem;">Inactif</span>
-                        @endif
-                    </div>
-
-                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
-                        <strong>Clients associés:</strong> {{ $item->clients->count() }}
-                    </div>
-
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <a href="{{ route('admin.centrex.show', $item) }}" class="btn btn-sm btn-primary">Voir</a>
-                        <a href="{{ route('admin.centrex.edit', $item) }}" class="btn btn-sm btn-secondary">Modifier</a>
-                        <form method="POST" action="{{ route('admin.centrex.destroy', $item) }}" style="display: inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce centrex ?')">Supprimer</button>
-                        </form>
-                    </div>
+                    @if(!$item->is_active)
+                        <span class="badge badge-danger">Inactif</span>
+                    @endif
                 </div>
-            @endforeach
+
+                <div class="text-sm text-secondary mb-lg">
+                    <strong>Clients associés:</strong>
+                    <span class="badge badge-neutral">{{ $item->clients->count() }}</span>
+                </div>
+
+                <div class="d-flex gap-sm flex-wrap">
+                    <a href="{{ route('admin.centrex.show', $item) }}" class="btn btn-sm btn-soft-primary">
+                        Voir
+                    </a>
+                    <a href="{{ route('admin.centrex.edit', $item) }}" class="btn btn-sm btn-soft-secondary">
+                        Modifier
+                    </a>
+                    <form method="POST" action="{{ route('admin.centrex.destroy', $item) }}" class="d-inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-sm btn-soft-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce centrex ?')">
+                            Supprimer
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endforeach
+    </div>
+@else
+    <div class="card">
+        <div class="empty-state">
+            <div class="empty-icon">📞</div>
+            <p class="empty-title">Aucun centrex</p>
+            <p class="empty-description">Vous n'avez pas encore de centrex enregistrés. Commencez par en créer un.</p>
+            <a href="{{ route('admin.centrex.create') }}" class="btn btn-primary">
+                ➕ Créer un centrex
+            </a>
         </div>
-    @else
-        <p class="text-secondary" style="text-align: center; padding: 2rem;">Aucun centrex pour le moment.</p>
-    @endif
-</div>
+    </div>
+@endif
 @endsection
