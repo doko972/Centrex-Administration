@@ -323,6 +323,7 @@ class CentrexProxyController extends Controller
         <script>
         (function() {
             var proxyBase = "{$proxyBase}";
+            var adminBase = proxyBase + "/admin/";
 
             function rewriteUrl(url) {
                 if (typeof url !== "string") return url;
@@ -330,9 +331,13 @@ class CentrexProxyController extends Controller
                 if (url.indexOf(proxyBase) !== -1) return url;
                 // Ne pas réécrire les URLs absolues externes
                 if (url.startsWith("http://") || url.startsWith("https://")) return url;
-                // Réécrire les URLs relatives
+                // Réécrire les URLs absolues (commençant par /)
                 if (url.startsWith("/")) {
                     return proxyBase + url;
+                }
+                // Réécrire les URLs relatives (ajax.php, config.php, etc.)
+                if (url.match(/^[a-zA-Z0-9_-]+\.php/) || url.match(/^[a-zA-Z0-9_-]+\//)) {
+                    return adminBase + url;
                 }
                 return url;
             }
