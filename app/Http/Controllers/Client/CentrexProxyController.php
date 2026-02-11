@@ -655,6 +655,27 @@ class CentrexProxyController extends Controller
 
             // Debug: Logger les redirections
             console.log('[Proxy] Intercepteurs installés - proxyBase:', proxyBase, 'freepbxIp:', freepbxIp);
+
+            // Fix pour le bug ivr.js de FreePBX (ligne 14-17)
+            // Le code original utilise $(document).on('change', $(...), fn) au lieu de $(document).on('change', 'selector', fn)
+            $(document).ready(function() {
+                // Supprimer le handler buggy et le remplacer par un correct
+                $(document).off('change', $("select[name^='goto']"));
+                $(document).on('change', "select[name^='goto']", function(){
+                    var id = $(this).attr('id');
+                    if (!id) return;
+                    var res = id.split("goto");
+                    var option = $(this).val();
+                    if (option == 'Extensions' || option == 'IVR' || option == 'Directory') {
+                        $("#"+res[1]).show();
+                    } else {
+                        $("#entries"+res[1]+"DESTIDyes").prop("checked", false);
+                        $("#entries"+res[1]+"DESTIDno").prop("checked", true);
+                        $("#"+res[1]).hide();
+                    }
+                });
+                console.log('[Proxy] Fix IVR.js appliqué');
+            });
         })();
         </script>
         JS;
