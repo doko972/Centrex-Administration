@@ -160,6 +160,14 @@ class CentrexProxyController extends Controller
 
         $targetUrl = "http://{$centrex->ip_address}" . $path;
 
+        // Corriger les URLs POST vers /admin?... pour utiliser /admin/config.php?...
+        // Cela évite la redirection 301 qui perd les données POST
+        if ($request->method() === 'POST' && preg_match('/^\/admin\/?(\?.*)?$/', $path)) {
+            $queryPart = $queryString ? '?' . $queryString : '';
+            $targetUrl = "http://{$centrex->ip_address}/admin/config.php" . $queryPart;
+            Log::debug('Proxy: Fixed POST URL to use config.php', ['original' => $path, 'fixed' => "/admin/config.php{$queryPart}"]);
+        }
+
         if (config('app.debug')) {
             Log::debug('Proxy Request:', [
                 'method' => $request->method(),
