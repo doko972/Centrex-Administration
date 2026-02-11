@@ -418,6 +418,20 @@ class AdminCentrexProxyController extends Controller
             function rewriteUrl(url) {
                 if (typeof url !== "string") return url;
                 if (url.indexOf(proxyBase) !== -1) return url;
+                if (url.indexOf("/proxy/") !== -1) return url;
+
+                // Capturer les URLs mal formées du type /admin/centrex/X/... sans /proxy/
+                var badUrlPattern = /^(https?:\/\/[^\/]+)?\/admin\/centrex\/(\d+)\/(?!proxy|view|edit|create)(.+)$/;
+                var badMatch = url.match(badUrlPattern);
+                if (badMatch) {
+                    var origin = badMatch[1] || '';
+                    var centrexId = badMatch[2];
+                    var rest = badMatch[3];
+                    var newUrl = origin + '/admin/centrex/' + centrexId + '/proxy/admin/' + rest;
+                    console.log('[Admin Proxy] Bad URL fix:', url, '->', newUrl);
+                    return newUrl;
+                }
+
                 if (url.indexOf(freepbxIp) !== -1) {
                     try {
                         var urlObj = new URL(url);
@@ -450,6 +464,9 @@ class AdminCentrexProxyController extends Controller
             var origOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url) {
                 var newUrl = rewriteUrl(url);
+                if (newUrl !== url) {
+                    console.log('[Admin Proxy] XHR rewrite:', url, '->', newUrl);
+                }
                 return origOpen.apply(this, [method, newUrl]);
             };
 
