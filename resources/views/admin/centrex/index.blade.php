@@ -62,6 +62,17 @@
                     <span class="badge badge-neutral">{{ $item->clients->count() }}</span>
                 </div>
 
+                <div class="d-flex gap-sm flex-wrap mb-sm">
+                    @if($item->is_active && $item->status === 'online')
+                        <a href="{{ route('admin.centrex.view', $item) }}" class="btn btn-sm btn-primary">
+                            Ouvrir FreePBX
+                        </a>
+                    @else
+                        <span class="btn btn-sm btn-soft-secondary" style="cursor: not-allowed; opacity: 0.6;">
+                            FreePBX indisponible
+                        </span>
+                    @endif
+                </div>
                 <div class="d-flex gap-sm flex-wrap">
                     <a href="{{ route('admin.centrex.show', $item) }}" class="btn btn-sm btn-soft-primary">
                         Voir

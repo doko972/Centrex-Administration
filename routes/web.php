@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CentrexController;
 use App\Http\Controllers\Admin\ClientCentrexController;
 use App\Http\Controllers\Client\DashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\AdminCentrexProxyController;
 use App\Http\Controllers\Client\CentrexProxyController;
 
 /*
@@ -56,6 +57,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Routes pour associer Centrex ↔ Clients
     Route::get('/clients/{client}/manage-centrex', [ClientCentrexController::class, 'manage'])->name('clients.manage-centrex');
     Route::post('/clients/{client}/manage-centrex', [ClientCentrexController::class, 'update'])->name('clients.update-centrex');
+
+    // Proxy Admin vers FreePBX - permet aux admins d'accéder à tous les centrex
+    Route::get('/centrex/{centrex}/view', [AdminCentrexProxyController::class, 'show'])->name('centrex.view');
+    Route::any('/centrex/{centrex}/proxy/{any}', [AdminCentrexProxyController::class, 'proxy'])
+        ->where('any', '.*')
+        ->name('centrex.proxy');
+    Route::any('/centrex/{centrex}/proxy', [AdminCentrexProxyController::class, 'proxy'])
+        ->name('centrex.proxy.root');
 });
 
 /*

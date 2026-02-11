@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'client/centrex/*/proxy',
             'client/centrex/*/proxy/*',
+            'admin/centrex/*/proxy',
+            'admin/centrex/*/proxy/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

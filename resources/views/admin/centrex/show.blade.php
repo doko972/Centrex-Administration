@@ -3,8 +3,11 @@
 @section('content')
     <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
         <h1>Détails du Centrex</h1>
-        <div>
+        <div style="display: flex; gap: 0.5rem;">
             <a href="{{ route('admin.centrex.index') }}" class="btn btn-outline">← Retour</a>
+            @if($centrex->is_active && $centrex->status === 'online')
+                <a href="{{ route('admin.centrex.view', $centrex) }}" class="btn btn-success">Ouvrir FreePBX</a>
+            @endif
             <a href="{{ route('admin.centrex.edit', $centrex) }}" class="btn btn-primary">Modifier</a>
         </div>
     </div>
@@ -95,11 +98,25 @@
 
             <div
                 style="margin-top: 1.5rem; padding: 1rem; background-color: var(--bg-tertiary); border-radius: var(--border-radius);">
-                <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">URL d'accès</strong>
-                <a href="http://{{ $centrex->ip_address }}{{ $centrex->port != 80 ? ':' . $centrex->port : '' }}"
-                    target="_blank" style="color: var(--color-primary); font-family: monospace; word-break: break-all;">
+                <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">Accès via le proxy</strong>
+                @if($centrex->is_active && $centrex->status === 'online')
+                    <a href="{{ route('admin.centrex.view', $centrex) }}"
+                        style="color: var(--color-primary); font-family: monospace; word-break: break-all;">
+                        Ouvrir FreePBX
+                    </a>
+                @else
+                    <span style="color: var(--text-secondary);">FreePBX indisponible (inactif ou hors ligne)</span>
+                @endif
+            </div>
+            <div
+                style="margin-top: 1rem; padding: 1rem; background-color: var(--bg-tertiary); border-radius: var(--border-radius);">
+                <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">IP directe (info)</strong>
+                <span style="font-family: monospace; color: var(--text-secondary);">
                     http://{{ $centrex->ip_address }}{{ $centrex->port != 80 ? ':' . $centrex->port : '' }}
-                </a>
+                </span>
+                <small style="display: block; margin-top: 0.25rem; color: var(--text-tertiary);">
+                    Accès direct non disponible (seule l'IP du serveur est autorisée)
+                </small>
             </div>
         </div>
     </div>
