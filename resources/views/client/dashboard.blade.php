@@ -57,11 +57,8 @@
                 </div>
 
                 <div class="centrex-actions">
-                    <a href="{{ route('client.centrex.nginx-proxy', $item) }}" class="btn btn-primary btn-block">
-                        🔒 Accéder au Centrex
-                    </a>
-                    <a href="{{ route('client.centrex.access', $item) }}" class="btn btn-outline btn-sm">
-                        Accès direct
+                    <a href="{{ route('client.centrex.view', $item) }}" class="btn btn-primary btn-block">
+                        Accéder au Centrex
                     </a>
                 </div>
             </div>

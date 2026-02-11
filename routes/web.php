@@ -8,7 +8,7 @@ use App\Http\Controllers\Admin\CentrexController;
 use App\Http\Controllers\Admin\ClientCentrexController;
 use App\Http\Controllers\Client\DashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Client\NginxProxyController;
+use App\Http\Controllers\Client\CentrexProxyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,20 +66,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
 Route::middleware(['auth', 'client'])->prefix('client')->name('client.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
-    // Accès direct (ancienne méthode)
-    Route::get('/centrex/{centrex}/access', [\App\Http\Controllers\Client\CentrexAccessController::class, 'access'])->name('centrex.access');
-    
-    // Routes pour le reverse proxy Laravel
-    Route::get('/centrex/{centrex}/view', [\App\Http\Controllers\Client\CentrexProxyController::class, 'show'])->name('centrex.view');
-    Route::any('/centrex/{centrex}/proxy/{any}', [\App\Http\Controllers\Client\CentrexProxyController::class, 'proxy'])
+
+    // Proxy Laravel vers FreePBX
+    Route::get('/centrex/{centrex}/view', [CentrexProxyController::class, 'show'])->name('centrex.view');
+    Route::any('/centrex/{centrex}/proxy/{any}', [CentrexProxyController::class, 'proxy'])
         ->where('any', '.*')
         ->name('centrex.proxy');
-    // Route pour le proxy sans chemin (page d'accueil)
-    Route::any('/centrex/{centrex}/proxy', [\App\Http\Controllers\Client\CentrexProxyController::class, 'proxy'])
+    Route::any('/centrex/{centrex}/proxy', [CentrexProxyController::class, 'proxy'])
         ->name('centrex.proxy.root');
-    
-    // NOUVEAU : Proxy Nginx (meilleure solution)
-    Route::get('/centrex/{centrex}/nginx-proxy', [NginxProxyController::class, 'show'])
-        ->name('centrex.nginx-proxy');
 });

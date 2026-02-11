@@ -12,24 +12,28 @@ use Illuminate\Support\Facades\Log;
 class CentrexProxyController extends Controller
 {
     /**
-     * Afficher la page avec iframe du centrex
+     * Vérifier que le client a accès au centrex
      */
-    public function show(Request $request, Centrex $centrex)
+    private function checkAccess(Centrex $centrex): void
     {
-        $user = Auth::user();
-        $client = $user->client;
+        $client = Auth::user()->client;
 
-        // Vérifier que le client a bien accès à ce centrex
         if (!$client->centrex->contains($centrex->id)) {
             abort(403, 'Vous n\'avez pas accès à ce centrex.');
         }
 
-        // Vérifier que le centrex est actif
         if (!$centrex->is_active) {
             abort(403, 'Ce centrex n\'est pas disponible actuellement.');
         }
+    }
 
-        // Au lieu d'utiliser l'iframe, charger directement le contenu
+    /**
+     * Afficher la page avec iframe du centrex
+     */
+    public function show(Request $request, Centrex $centrex)
+    {
+        $this->checkAccess($centrex);
+
         return $this->proxy($request, $centrex);
     }
 
@@ -38,136 +42,148 @@ class CentrexProxyController extends Controller
      */
     public function proxy(Request $request, Centrex $centrex, $any = null)
     {
-        $user = Auth::user();
-        $client = $user->client;
-
-        // Vérifier l'accès
-        if (!$client->centrex->contains($centrex->id)) {
-            abort(403);
-        }
+        $this->checkAccess($centrex);
 
         // Construire l'URL cible
-        $baseUrl = "http://{$centrex->ip_address}";
-
-        // Récupérer le chemin demandé
         $path = $any ? '/' . $any : '/';
-
-        // Ajouter les query parameters
         $queryString = $request->getQueryString();
         if ($queryString) {
             $path .= '?' . $queryString;
         }
 
-        $targetUrl = $baseUrl . $path;
+        $targetUrl = "http://{$centrex->ip_address}" . $path;
 
-        // DEBUG : Logger toutes les requêtes
-        Log::info('Proxy Request Full:', [
-            'method' => $request->method(),
-            'any' => $any,
-            'path' => $path,
-            'targetUrl' => $targetUrl,
-            'queryString' => $request->getQueryString(),
-            'postData' => $request->all()
-        ]);
+        // Log en mode debug uniquement
+        if (config('app.debug')) {
+            Log::debug('Proxy Request:', [
+                'method' => $request->method(),
+                'targetUrl' => $targetUrl,
+            ]);
+        }
 
         try {
-            // Configuration de base
             $httpClient = Http::withOptions([
                 'verify' => false,
-                'timeout' => 60, // Augmenté à 60s pour les assets lourds
+                'timeout' => 60,
                 'connect_timeout' => 10,
             ])
-                ->withHeaders([
-                    'User-Agent' => 'Centrex-Dashboard-Proxy/1.0',
-                ])
-                ->withBasicAuth($centrex->login, $centrex->getDecryptedPassword());
+            ->withHeaders([
+                'User-Agent' => 'Centrex-Dashboard-Proxy/1.0',
+            ])
+            ->withBasicAuth($centrex->login, $centrex->getDecryptedPassword());
 
-            // Selon la méthode HTTP
+            // Exécuter la requête selon la méthode HTTP
             $method = strtolower($request->method());
+            $response = match ($method) {
+                'post' => $httpClient->asForm()->post($targetUrl, $request->all()),
+                'get' => $httpClient->get($targetUrl),
+                default => $httpClient->{$method}($targetUrl, $request->all()),
+            };
 
-            if ($method === 'post') {
-                // Pour POST, envoyer les données comme formulaire
-                $response = $httpClient->asForm()->post($targetUrl, $request->all());
-            } elseif ($method === 'get') {
-                $response = $httpClient->get($targetUrl);
-            } else {
-                $response = $httpClient->{$method}($targetUrl, $request->all());
+            // Vérifier si le serveur distant a retourné une erreur
+            if ($response->failed()) {
+                Log::warning('Proxy: Erreur serveur distant', [
+                    'status' => $response->status(),
+                    'url' => $targetUrl,
+                ]);
             }
 
             $body = $response->body();
             $contentType = $response->header('Content-Type') ?? 'text/html';
 
-            // Détecter si c'est un fichier asset (JS, CSS, image, etc.)
-            $isAsset = preg_match('/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|map)$/i', $path) ||
-                       strpos($contentType, 'javascript') !== false ||
-                       strpos($contentType, 'css') !== false ||
-                       strpos($contentType, 'image/') !== false ||
-                       strpos($contentType, 'font/') !== false ||
-                       strpos($contentType, 'application/font') !== false;
-
-            // Si c'est un asset, retourner tel quel sans modification
-            if ($isAsset) {
+            // Assets (JS, CSS, images, fonts) : retourner sans modification
+            if ($this->isAsset($path, $contentType)) {
                 return response($body, $response->status())
                     ->withHeaders([
                         'Content-Type' => $contentType,
-                        'Cache-Control' => 'public, max-age=86400', // Cache 24h
+                        'Cache-Control' => 'public, max-age=86400',
                     ]);
             }
 
-            // Si c'est du HTML, réécrire les chemins
-            if (strpos($contentType, 'text/html') !== false) {
-                $proxyBase = url("client/centrex/{$centrex->id}/proxy");
-
-                // Remplacer href="/..."
-                $body = preg_replace('/href=["\']\/((?!http)[^"\']*)["\']/i', 'href="' . $proxyBase . '/$1"', $body);
-
-                // Remplacer src="/..."
-                $body = preg_replace('/src=["\']\/((?!http)[^"\']*)["\']/i', 'src="' . $proxyBase . '/$1"', $body);
-
-                // Remplacer action="/..."
-                $body = preg_replace('/action=["\']\/((?!http)[^"\']*)["\']/i', 'action="' . $proxyBase . '/$1"', $body);
-
-                // Ajouter une base tag
-                $baseTag = '<base href="' . $proxyBase . '/admin/">';
-                $body = preg_replace('/<head>/i', '<head>' . $baseTag, $body, 1);
-
-                // Injecter le CSS personnalisé HRTelecoms + script AJAX interceptor
-                $customCSS = '<link rel="stylesheet" href="' . url('/css/freepbx-custom.css') . '" type="text/css">';
-
-                $ajaxInterceptor = '<script>
-    (function() {
-        var proxyBase = "' . $proxyBase . '";
-        var origOpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function(method, url) {
-            if (url.startsWith("/")) {
-                url = proxyBase + url;
-            }
-            return origOpen.apply(this, [method, url]);
-        };
-        
-        var origFetch = window.fetch;
-        window.fetch = function(url, options) {
-            if (typeof url === "string" && url.startsWith("/")) {
-                url = proxyBase + url;
-            }
-            return origFetch.apply(this, [url, options]);
-        };
-    })();
-    </script>';
-
-                // Injecter le CSS et le script en une seule fois avant </head>
-                $injections = $customCSS . "\n" . $ajaxInterceptor;
-                $body = preg_replace('/<\/head>/i', $injections . '</head>', $body, 1);
+            // HTML : réécrire les URLs et injecter l'intercepteur AJAX
+            if (str_contains($contentType, 'text/html')) {
+                $body = $this->rewriteHtml($body, $centrex->id);
             }
 
-            // Retourner la réponse modifiée
             return response($body, $response->status())
                 ->withHeaders([
                     'Content-Type' => $contentType,
                     'X-Frame-Options' => 'SAMEORIGIN',
                 ]);
+
         } catch (\Exception $e) {
-            return response('Erreur de connexion au centrex: ' . $e->getMessage(), 500);
+            Log::error('Proxy: Exception', [
+                'message' => $e->getMessage(),
+                'url' => $targetUrl,
+            ]);
+
+            return response('Erreur de connexion au centrex: ' . $e->getMessage(), 502);
         }
+    }
+
+    /**
+     * Détecter si la requête concerne un asset statique
+     */
+    private function isAsset(string $path, string $contentType): bool
+    {
+        $assetExtensions = '/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|map)$/i';
+        $assetContentTypes = ['javascript', 'css', 'image/', 'font/', 'application/font'];
+
+        if (preg_match($assetExtensions, $path)) {
+            return true;
+        }
+
+        foreach ($assetContentTypes as $type) {
+            if (str_contains($contentType, $type)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Réécrire les URLs dans le HTML et injecter l'intercepteur AJAX
+     */
+    private function rewriteHtml(string $body, int $centrexId): string
+    {
+        $proxyBase = url("client/centrex/{$centrexId}/proxy");
+
+        // Réécrire les chemins absolus (href, src, action)
+        $body = preg_replace('/href=["\']\/((?!http)[^"\']*)["\']/i', 'href="' . $proxyBase . '/$1"', $body);
+        $body = preg_replace('/src=["\']\/((?!http)[^"\']*)["\']/i', 'src="' . $proxyBase . '/$1"', $body);
+        $body = preg_replace('/action=["\']\/((?!http)[^"\']*)["\']/i', 'action="' . $proxyBase . '/$1"', $body);
+
+        // Ajouter la base tag
+        $baseTag = '<base href="' . $proxyBase . '/admin/">';
+        $body = preg_replace('/<head>/i', '<head>' . $baseTag, $body, 1);
+
+        // Injecter l'intercepteur AJAX/Fetch
+        $ajaxInterceptor = <<<JS
+        <script>
+        (function() {
+            var proxyBase = "{$proxyBase}";
+            var origOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+                if (url.startsWith("/")) {
+                    url = proxyBase + url;
+                }
+                return origOpen.apply(this, [method, url]);
+            };
+
+            var origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                if (typeof url === "string" && url.startsWith("/")) {
+                    url = proxyBase + url;
+                }
+                return origFetch.apply(this, [url, options]);
+            };
+        })();
+        </script>
+        JS;
+
+        $body = preg_replace('/<\/head>/i', $ajaxInterceptor . '</head>', $body, 1);
+
+        return $body;
     }
 }
