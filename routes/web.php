@@ -74,4 +74,11 @@ Route::middleware(['auth', 'client'])->prefix('client')->name('client.')->group(
         ->name('centrex.proxy');
     Route::any('/centrex/{centrex}/proxy', [CentrexProxyController::class, 'proxy'])
         ->name('centrex.proxy.root');
+
+    // Fallback : capturer les URLs mal formées (sans /proxy/) et les rediriger
+    Route::any('/centrex/{centrex}/{any}', function ($centrex, $any, \Illuminate\Http\Request $request) {
+        $query = $request->getQueryString();
+        $url = "/client/centrex/{$centrex}/proxy/admin/{$any}" . ($query ? "?{$query}" : "");
+        return redirect($url);
+    })->where('any', '(?!view|proxy).*');
 });
