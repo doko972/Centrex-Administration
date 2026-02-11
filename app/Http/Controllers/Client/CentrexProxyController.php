@@ -363,23 +363,15 @@ class CentrexProxyController extends Controller
 
             // Assets (JS, CSS, images, fonts) : retourner avec corrections si nécessaire
             if ($this->isAsset($path, $contentType)) {
-                // Fix pour ivr.js - corriger le bug jQuery .on() avec mauvais sélecteur
+                // Fix pour ivr.js - ajouter une vérification de sécurité pour éviter le crash
                 if (str_contains($path, 'ivr.js')) {
-                    // Remplacer le handler buggy par un correct (utiliser regex pour gérer les espaces variables)
-                    $pattern = '/\$\(document\)\.on\s*\(\s*[\'"]change[\'"]\s*,\s*\$\s*\(\s*["\']select\[name\^=[\'"]goto[\'"]\]["\'][^)]*\)\s*,\s*function\s*\(\s*\)\s*\{[\s\S]*?var\s+string\s*=\s*\$\(this\)\.attr\([\'"]activeElement[\'"]\);[\s\S]*?var\s+id\s*=\s*\$\(string\)\.attr\([\'"]id[\'"]\);[\s\S]*?var\s+res\s*=\s*id\.split\(["\']goto["\']\);/';
-
-                    $replacement = '$(document).on(\'change\', "select[name^=\'goto\']", function(){
-        var id = $(this).attr(\'id\');
-        if (!id) return;
-        var res = id.split("goto");';
-
-                    $newBody = preg_replace($pattern, $replacement, $body);
-                    if ($newBody !== $body) {
-                        $body = $newBody;
-                        Log::debug('Proxy: Applied ivr.js fix successfully');
-                    } else {
-                        Log::debug('Proxy: ivr.js fix pattern did not match');
-                    }
+                    // Approche simple: remplacer "var res = id.split" par une version sécurisée
+                    $body = str_replace(
+                        'var res = id.split("goto");',
+                        'if (!id) return; var res = id.split("goto");',
+                        $body
+                    );
+                    Log::debug('Proxy: Applied ivr.js safety fix');
                 }
 
                 return response($body, $response->getStatusCode())
