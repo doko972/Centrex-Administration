@@ -361,8 +361,25 @@ class CentrexProxyController extends Controller
                 return $this->proxy($request, $centrex, $any);
             }
 
-            // Assets (JS, CSS, images, fonts) : retourner sans modification
+            // Assets (JS, CSS, images, fonts) : retourner avec corrections si nécessaire
             if ($this->isAsset($path, $contentType)) {
+                // Fix pour ivr.js - corriger le bug jQuery .on() avec mauvais sélecteur
+                if (str_contains($path, 'ivr.js')) {
+                    // Remplacer le handler buggy par un correct
+                    $body = str_replace(
+                        '$(document).on(\'change\',  $("select[name^=\'goto\']"), function(){
+         var string = $(this).attr(\'activeElement\');
+        var id =  $(string).attr(\'id\');
+         var res = id.split("goto");',
+                        '$(document).on(\'change\', "select[name^=\'goto\']", function(){
+         var id = $(this).attr(\'id\');
+         if (!id) return;
+         var res = id.split("goto");',
+                        $body
+                    );
+                    Log::debug('Proxy: Applied ivr.js fix');
+                }
+
                 return response($body, $response->getStatusCode())
                     ->withHeaders([
                         'Content-Type' => $contentType,
@@ -655,27 +672,6 @@ class CentrexProxyController extends Controller
 
             // Debug: Logger les redirections
             console.log('[Proxy] Intercepteurs installés - proxyBase:', proxyBase, 'freepbxIp:', freepbxIp);
-
-            // Fix pour le bug ivr.js de FreePBX (ligne 14-17)
-            // Le code original utilise $(document).on('change', $(...), fn) au lieu de $(document).on('change', 'selector', fn)
-            $(document).ready(function() {
-                // Supprimer le handler buggy et le remplacer par un correct
-                $(document).off('change', $("select[name^='goto']"));
-                $(document).on('change', "select[name^='goto']", function(){
-                    var id = $(this).attr('id');
-                    if (!id) return;
-                    var res = id.split("goto");
-                    var option = $(this).val();
-                    if (option == 'Extensions' || option == 'IVR' || option == 'Directory') {
-                        $("#"+res[1]).show();
-                    } else {
-                        $("#entries"+res[1]+"DESTIDyes").prop("checked", false);
-                        $("#entries"+res[1]+"DESTIDno").prop("checked", true);
-                        $("#"+res[1]).hide();
-                    }
-                });
-                console.log('[Proxy] Fix IVR.js appliqué');
-            });
         })();
         </script>
         JS;
