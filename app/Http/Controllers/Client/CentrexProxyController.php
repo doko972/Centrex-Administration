@@ -247,13 +247,25 @@ class CentrexProxyController extends Controller
                     $options['form_params'] = $request->all();
                     Log::debug('Proxy: POST form_params', ['params' => array_keys($request->all())]);
 
-                    // Debug spécifique pour IVR
-                    if (str_contains($targetUrl, 'display=ivr')) {
-                        $entries = $request->input('entries');
-                        Log::debug('Proxy: IVR entries structure', [
-                            'entries_type' => gettype($entries),
-                            'entries_keys' => is_array($entries) ? array_keys($entries) : 'not_array',
-                            'entries_preview' => is_array($entries) ? json_encode($entries) : $entries,
+                    // Fix spécifique pour IVR - s'assurer que entries[ivr_ret] est un tableau indexé
+                    if (str_contains($targetUrl, 'display=ivr') && isset($options['form_params']['entries'])) {
+                        $entries = $options['form_params']['entries'];
+
+                        // Convertir ivr_ret en tableau indexé si c'est un objet associatif
+                        if (isset($entries['ivr_ret']) && is_array($entries['ivr_ret'])) {
+                            // Filtrer les valeurs null et réindexer
+                            $ivrRet = array_values(array_filter($entries['ivr_ret'], function($v) {
+                                return $v !== null;
+                            }));
+                            // Si vide, mettre des valeurs par défaut (0 pour chaque entrée)
+                            if (empty($ivrRet) && isset($entries['ext']) && is_array($entries['ext'])) {
+                                $ivrRet = array_fill(0, count($entries['ext']), '0');
+                            }
+                            $options['form_params']['entries']['ivr_ret'] = $ivrRet;
+                        }
+
+                        Log::debug('Proxy: IVR entries fixed', [
+                            'ivr_ret' => $options['form_params']['entries']['ivr_ret'] ?? 'not_set',
                         ]);
                     }
                 }
