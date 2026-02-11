@@ -51,20 +51,27 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Routes CRUD Clients
     Route::resource('clients', ClientController::class);
 
-    // Routes CRUD Centrex
-    Route::resource('centrex', CentrexController::class);
-
     // Routes pour associer Centrex ↔ Clients
     Route::get('/clients/{client}/manage-centrex', [ClientCentrexController::class, 'manage'])->name('clients.manage-centrex');
     Route::post('/clients/{client}/manage-centrex', [ClientCentrexController::class, 'update'])->name('clients.update-centrex');
 
-    // Proxy Admin vers FreePBX - permet aux admins d'accéder à tous les centrex
+    // Proxy Admin vers FreePBX - DOIT être défini AVANT les routes resource centrex
     Route::get('/centrex/{centrex}/view', [AdminCentrexProxyController::class, 'show'])->name('centrex.view');
     Route::any('/centrex/{centrex}/proxy/{any}', [AdminCentrexProxyController::class, 'proxy'])
         ->where('any', '.*')
         ->name('centrex.proxy');
     Route::any('/centrex/{centrex}/proxy', [AdminCentrexProxyController::class, 'proxy'])
         ->name('centrex.proxy.root');
+
+    // Fallback : capturer les URLs mal formées (sans /proxy/) et les rediriger
+    Route::any('/centrex/{centrex_id}/{any}', function ($centrex_id, $any, \Illuminate\Http\Request $request) {
+        $query = $request->getQueryString();
+        $url = "/admin/centrex/{$centrex_id}/proxy/admin/{$any}" . ($query ? "?{$query}" : "");
+        return redirect($url);
+    })->where('any', '(?!view|proxy|create|edit).*');
+
+    // Routes CRUD Centrex (après les routes proxy pour éviter les conflits)
+    Route::resource('centrex', CentrexController::class);
 });
 
 /*
@@ -85,9 +92,9 @@ Route::middleware(['auth', 'client'])->prefix('client')->name('client.')->group(
         ->name('centrex.proxy.root');
 
     // Fallback : capturer les URLs mal formées (sans /proxy/) et les rediriger
-    Route::any('/centrex/{centrex}/{any}', function ($centrex, $any, \Illuminate\Http\Request $request) {
+    Route::any('/centrex/{centrex_id}/{any}', function ($centrex_id, $any, \Illuminate\Http\Request $request) {
         $query = $request->getQueryString();
-        $url = "/client/centrex/{$centrex}/proxy/admin/{$any}" . ($query ? "?{$query}" : "");
+        $url = "/client/centrex/{$centrex_id}/proxy/admin/{$any}" . ($query ? "?{$query}" : "");
         return redirect($url);
     })->where('any', '(?!view|proxy).*');
 });
