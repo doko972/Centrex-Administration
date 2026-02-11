@@ -317,7 +317,10 @@ class CentrexProxyController extends Controller
         $body = preg_replace('/src=["\']\/((?!http)[^"\']*)["\']/i', 'src="' . $proxyBase . '/$1"', $body);
         $body = preg_replace('/action=["\']\/((?!http)[^"\']*)["\']/i', 'action="' . $proxyBase . '/$1"', $body);
 
-        // Ajouter la base tag
+        // Supprimer toutes les balises <base> existantes
+        $body = preg_replace('/<base[^>]*>/i', '', $body);
+
+        // Ajouter notre balise base
         $baseTag = '<base href="' . $proxyBase . '/admin/">';
         $body = preg_replace('/<head>/i', '<head>' . $baseTag, $body, 1);
 
@@ -372,13 +375,21 @@ class CentrexProxyController extends Controller
             // Intercepter XMLHttpRequest
             var origOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url) {
-                return origOpen.apply(this, [method, rewriteUrl(url)]);
+                var newUrl = rewriteUrl(url);
+                if (newUrl !== url) {
+                    console.log('[Proxy XHR]', method, url, '->', newUrl);
+                }
+                return origOpen.apply(this, [method, newUrl]);
             };
 
             // Intercepter fetch
             var origFetch = window.fetch;
             window.fetch = function(url, options) {
-                return origFetch.apply(this, [rewriteUrl(url), options]);
+                var newUrl = rewriteUrl(url);
+                if (newUrl !== url) {
+                    console.log('[Proxy Fetch]', url, '->', newUrl);
+                }
+                return origFetch.apply(this, [newUrl, options]);
             };
 
             // Intercepter window.location.href et window.location.assign
@@ -438,8 +449,18 @@ class CentrexProxyController extends Controller
                 }
             }, true);
 
+            // Créer une fausse location pour tromper les scripts qui lisent window.location
+            var proxyUrl = new URL(proxyBase);
+            var fakeHost = proxyUrl.host;
+            var fakeHostname = proxyUrl.hostname;
+            var fakeOrigin = proxyUrl.origin;
+
+            // Stocker les valeurs originales pour référence
+            var realHost = window.location.host;
+            var realHostname = window.location.hostname;
+
             // Debug: Logger les redirections
-            console.log('[Proxy] Intercepteurs installés - proxyBase:', proxyBase);
+            console.log('[Proxy] Intercepteurs installés - proxyBase:', proxyBase, 'freepbxIp:', freepbxIp);
         })();
         </script>
         JS;
