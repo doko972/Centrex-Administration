@@ -48,23 +48,6 @@ class CentrexProxyController extends Controller
         session([$sessionKey => $jar->toArray()]);
     }
 
-    /**
-     * Vérifier si une session est déjà établie pour ce centrex
-     */
-    private function hasSession(int $centrexId): bool
-    {
-        $sessionKey = "centrex_authenticated_{$centrexId}";
-        return session($sessionKey, false);
-    }
-
-    /**
-     * Marquer la session comme établie
-     */
-    private function markAuthenticated(int $centrexId): void
-    {
-        $sessionKey = "centrex_authenticated_{$centrexId}";
-        session([$sessionKey => true]);
-    }
 
     /**
      * Afficher la page avec iframe du centrex
@@ -85,6 +68,11 @@ class CentrexProxyController extends Controller
 
         // Construire l'URL cible
         $path = $any ? '/' . $any : '/';
+
+        // Nettoyer le path si il contient accidentellement le chemin du proxy
+        $proxyPattern = '/^\/?(client\/centrex\/\d+\/proxy\/?)/';
+        $path = preg_replace($proxyPattern, '/', $path);
+
         $queryString = $request->getQueryString();
         if ($queryString) {
             $path .= '?' . $queryString;
@@ -103,8 +91,8 @@ class CentrexProxyController extends Controller
             // Récupérer le CookieJar de la session
             $cookieJar = $this->getCookieJar($centrex->id);
 
-            // Configuration de base du client
-            $clientConfig = [
+            // Configuration de base du client - toujours envoyer l'auth Basic
+            $client = new Client([
                 'verify' => false,
                 'timeout' => 60,
                 'connect_timeout' => 10,
@@ -113,19 +101,13 @@ class CentrexProxyController extends Controller
                     'track_redirects' => true,
                 ],
                 'cookies' => $cookieJar,
+                'auth' => [$centrex->login, $centrex->getDecryptedPassword()],
                 'headers' => [
                     'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                     'Referer' => "http://{$centrex->ip_address}/admin/",
                     'Origin' => "http://{$centrex->ip_address}",
                 ],
-            ];
-
-            // Ajouter l'auth Basic uniquement si pas encore authentifié
-            if (!$this->hasSession($centrex->id)) {
-                $clientConfig['auth'] = [$centrex->login, $centrex->getDecryptedPassword()];
-            }
-
-            $client = new Client($clientConfig);
+            ]);
 
             // Préparer les options de requête
             $options = [];
@@ -139,9 +121,8 @@ class CentrexProxyController extends Controller
 
             $response = $client->request($method, $targetUrl, $options);
 
-            // Sauvegarder les cookies mis à jour et marquer comme authentifié
+            // Sauvegarder les cookies mis à jour
             $this->saveCookieJar($centrex->id, $cookieJar);
-            $this->markAuthenticated($centrex->id);
 
             $body = (string) $response->getBody();
             $contentType = $response->getHeaderLine('Content-Type') ?: 'text/html';
@@ -169,15 +150,6 @@ class CentrexProxyController extends Controller
         } catch (\GuzzleHttp\Exception\ClientException $e) {
             $response = $e->getResponse();
             $statusCode = $response ? $response->getStatusCode() : 500;
-
-            // Si 401 et qu'on était authentifié, réinitialiser et réessayer
-            if ($statusCode === 401 && $this->hasSession($centrex->id)) {
-                session()->forget("centrex_authenticated_{$centrex->id}");
-                session()->forget("centrex_cookies_{$centrex->id}");
-
-                // Réessayer avec authentification (une seule fois)
-                return $this->proxy($request, $centrex, $any);
-            }
 
             Log::warning('Proxy: Client Error', [
                 'status' => $statusCode,
