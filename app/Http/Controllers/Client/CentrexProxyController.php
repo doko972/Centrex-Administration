@@ -365,19 +365,21 @@ class CentrexProxyController extends Controller
             if ($this->isAsset($path, $contentType)) {
                 // Fix pour ivr.js - corriger le bug jQuery .on() avec mauvais sélecteur
                 if (str_contains($path, 'ivr.js')) {
-                    // Remplacer le handler buggy par un correct
-                    $body = str_replace(
-                        '$(document).on(\'change\',  $("select[name^=\'goto\']"), function(){
-         var string = $(this).attr(\'activeElement\');
-        var id =  $(string).attr(\'id\');
-         var res = id.split("goto");',
-                        '$(document).on(\'change\', "select[name^=\'goto\']", function(){
-         var id = $(this).attr(\'id\');
-         if (!id) return;
-         var res = id.split("goto");',
-                        $body
-                    );
-                    Log::debug('Proxy: Applied ivr.js fix');
+                    // Remplacer le handler buggy par un correct (utiliser regex pour gérer les espaces variables)
+                    $pattern = '/\$\(document\)\.on\s*\(\s*[\'"]change[\'"]\s*,\s*\$\s*\(\s*["\']select\[name\^=[\'"]goto[\'"]\]["\'][^)]*\)\s*,\s*function\s*\(\s*\)\s*\{[\s\S]*?var\s+string\s*=\s*\$\(this\)\.attr\([\'"]activeElement[\'"]\);[\s\S]*?var\s+id\s*=\s*\$\(string\)\.attr\([\'"]id[\'"]\);[\s\S]*?var\s+res\s*=\s*id\.split\(["\']goto["\']\);/';
+
+                    $replacement = '$(document).on(\'change\', "select[name^=\'goto\']", function(){
+        var id = $(this).attr(\'id\');
+        if (!id) return;
+        var res = id.split("goto");';
+
+                    $newBody = preg_replace($pattern, $replacement, $body);
+                    if ($newBody !== $body) {
+                        $body = $newBody;
+                        Log::debug('Proxy: Applied ivr.js fix successfully');
+                    } else {
+                        Log::debug('Proxy: ivr.js fix pattern did not match');
+                    }
                 }
 
                 return response($body, $response->getStatusCode())
