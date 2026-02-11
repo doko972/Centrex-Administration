@@ -97,7 +97,9 @@ class CentrexProxyController extends Controller
                 'cookies' => $cookieJar,
                 'auth' => [$centrex->login, $centrex->getDecryptedPassword()],
                 'headers' => [
-                    'User-Agent' => 'Centrex-Dashboard-Proxy/1.0',
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Referer' => "http://{$centrex->ip_address}/admin/",
+                    'Origin' => "http://{$centrex->ip_address}",
                 ],
             ]);
 
