@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\IsAdmin::class,
             'client' => \App\Http\Middleware\IsClient::class,
         ]);
+
+        // Exclure les routes du proxy de la vérification CSRF
+        $middleware->validateCsrfTokens(except: [
+            'client/centrex/*/proxy',
+            'client/centrex/*/proxy/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
