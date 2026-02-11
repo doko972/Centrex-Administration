@@ -46,7 +46,7 @@
                 </div>
 
                 <div class="navbar-actions">
-                    <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" onclick="toggleTheme()">
+                    <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
                         <span class="theme-icon-light">🌙</span>
                         <span class="theme-icon-dark" style="display: none;">☀️</span>
                     </button>
@@ -102,36 +102,21 @@
         (function() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
-            // Update icons immediately
-            setTimeout(function() {
-                updateThemeIcons(savedTheme);
-            }, 0);
-        })();
-
-        // Update theme icons
-        function updateThemeIcons(theme) {
-            const iconLight = document.querySelector('.theme-icon-light');
-            const iconDark = document.querySelector('.theme-icon-dark');
-            if (iconLight && iconDark) {
-                if (theme === 'dark') {
-                    iconLight.style.display = 'none';
-                    iconDark.style.display = 'inline';
-                } else {
-                    iconLight.style.display = 'inline';
-                    iconDark.style.display = 'none';
+            // Update icons immediately after DOM elements are available
+            document.addEventListener('DOMContentLoaded', function() {
+                const iconLight = document.querySelector('.theme-icon-light');
+                const iconDark = document.querySelector('.theme-icon-dark');
+                if (iconLight && iconDark) {
+                    if (savedTheme === 'dark') {
+                        iconLight.style.display = 'none';
+                        iconDark.style.display = 'inline';
+                    } else {
+                        iconLight.style.display = 'inline';
+                        iconDark.style.display = 'none';
+                    }
                 }
-            }
-        }
-
-        // Toggle theme function (called by onclick)
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme') || 'light';
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcons(newTheme);
-        }
+            });
+        })();
 
         // User menu dropdown
         function toggleUserMenu() {
@@ -147,23 +132,11 @@
         document.addEventListener('click', function(e) {
             const userMenu = document.getElementById('user-menu');
             const dropdown = document.getElementById('user-dropdown');
-            const themeToggle = document.getElementById('theme-toggle');
-
-            // Don't close if clicking theme toggle
-            if (themeToggle && themeToggle.contains(e.target)) {
-                return;
-            }
 
             if (userMenu && dropdown && !userMenu.contains(e.target)) {
                 userMenu.classList.remove('open');
                 dropdown.classList.remove('show');
             }
-        });
-
-        // Update icons when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            updateThemeIcons(savedTheme);
         });
     </script>
 

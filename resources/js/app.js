@@ -15,24 +15,32 @@ document.addEventListener('DOMContentLoaded', function() {
     document.documentElement.setAttribute('data-theme', currentTheme);
 
     const themeToggle = document.getElementById('theme-toggle');
-    
+
     if (themeToggle) {
         updateThemeIcon(currentTheme);
 
         themeToggle.addEventListener('click', function() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            
+
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-            
+
             updateThemeIcon(newTheme);
         });
     }
 
     function updateThemeIcon(theme) {
-        if (themeToggle) {
-            themeToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+        const iconLight = document.querySelector('.theme-icon-light');
+        const iconDark = document.querySelector('.theme-icon-dark');
+        if (iconLight && iconDark) {
+            if (theme === 'dark') {
+                iconLight.style.display = 'none';
+                iconDark.style.display = 'inline';
+            } else {
+                iconLight.style.display = 'inline';
+                iconDark.style.display = 'none';
+            }
         }
     }
 });

@@ -14,7 +14,7 @@ class CentrexController extends Controller
      */
     public function index()
     {
-        $centrex = Centrex::with('clients')->get();
+        $centrex = Centrex::with('clients')->orderBy('name', 'asc')->get();
         return view('admin.centrex.index', compact('centrex'));
     }
 

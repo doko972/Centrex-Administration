@@ -11,7 +11,7 @@
             ← Retour
         </a>
         <a href="{{ route('admin.centrex.create') }}" class="btn btn-primary">
-            ➕ Nouveau Centrex
+            + Nouveau Centrex
         </a>
     </div>
 </div>
@@ -26,71 +26,111 @@
 @endif
 
 @if($centrex->count() > 0)
-    <div class="grid grid-auto-lg">
+    <!-- Barre de recherche -->
+    <div class="card mb-lg" style="padding: 1rem;">
+        <input
+            type="text"
+            id="centrex-search"
+            class="form-control"
+            placeholder="Rechercher un centrex (nom, IP, description)..."
+            style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem;"
+        >
+    </div>
+
+    <!-- Liste des centrex -->
+    <div id="centrex-list">
         @foreach($centrex as $item)
-            <div class="card card-interactive">
-                @if($item->image)
-                    <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->name }}" class="centrex-image">
-                @else
-                    <div class="centrex-placeholder">
-                        📞
+            <div class="card mb-md centrex-list-item"
+                 data-name="{{ strtolower($item->name) }}"
+                 data-ip="{{ strtolower($item->ip_address) }}"
+                 data-description="{{ strtolower($item->description ?? '') }}">
+                <div style="display: flex; align-items: center; gap: 1.5rem;">
+                    @if($item->image)
+                        <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->name }}"
+                            style="width: 80px; height: 80px; object-fit: cover; border-radius: var(--border-radius); flex-shrink: 0;">
+                    @else
+                        <div style="width: 80px; height: 80px; background: var(--bg-tertiary); border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
+                            📞
+                        </div>
+                    @endif
+
+                    <div style="flex: 1; min-width: 0;">
+                        <h3 style="margin: 0 0 0.25rem 0;">{{ $item->name }}</h3>
+                        <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.875rem; font-family: monospace;">
+                            {{ $item->ip_address }}:{{ $item->port }}
+                        </p>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                            @if($item->status === 'online')
+                                <span class="status status-online">En ligne</span>
+                            @elseif($item->status === 'offline')
+                                <span class="status status-offline">Hors ligne</span>
+                            @else
+                                <span class="status status-maintenance">Maintenance</span>
+                            @endif
+
+                            @if(!$item->is_active)
+                                <span class="badge badge-danger">Inactif</span>
+                            @endif
+
+                            <span style="color: var(--text-tertiary); font-size: 0.875rem;">
+                                {{ $item->clients->count() }} client(s) associé(s)
+                            </span>
+                        </div>
                     </div>
-                @endif
 
-                <h3 class="centrex-title">{{ $item->name }}</h3>
-
-                <p class="text-sm text-secondary mb-md">
-                    {{ $item->ip_address }}:{{ $item->port }}
-                </p>
-
-                <div class="d-flex gap-sm flex-wrap mb-md">
-                    @if($item->status === 'online')
-                        <span class="status status-online">En ligne</span>
-                    @elseif($item->status === 'offline')
-                        <span class="status status-offline">Hors ligne</span>
-                    @else
-                        <span class="status status-maintenance">Maintenance</span>
-                    @endif
-
-                    @if(!$item->is_active)
-                        <span class="badge badge-danger">Inactif</span>
-                    @endif
-                </div>
-
-                <div class="text-sm text-secondary mb-lg">
-                    <strong>Clients associés:</strong>
-                    <span class="badge badge-neutral">{{ $item->clients->count() }}</span>
-                </div>
-
-                <div class="d-flex gap-sm flex-wrap mb-sm">
-                    @if($item->is_active && $item->status === 'online')
-                        <a href="{{ route('admin.centrex.view', $item) }}" class="btn btn-sm btn-primary">
-                            Ouvrir FreePBX
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; flex-shrink: 0;">
+                        @if($item->is_active && $item->status === 'online')
+                            <a href="{{ route('admin.centrex.view', $item) }}" class="btn btn-sm btn-primary">
+                                Ouvrir FreePBX
+                            </a>
+                        @endif
+                        <a href="{{ route('admin.centrex.show', $item) }}" class="btn btn-sm btn-soft-primary">
+                            Voir
                         </a>
-                    @else
-                        <span class="btn btn-sm btn-soft-secondary" style="cursor: not-allowed; opacity: 0.6;">
-                            FreePBX indisponible
-                        </span>
-                    @endif
-                </div>
-                <div class="d-flex gap-sm flex-wrap">
-                    <a href="{{ route('admin.centrex.show', $item) }}" class="btn btn-sm btn-soft-primary">
-                        Voir
-                    </a>
-                    <a href="{{ route('admin.centrex.edit', $item) }}" class="btn btn-sm btn-soft-secondary">
-                        Modifier
-                    </a>
-                    <form method="POST" action="{{ route('admin.centrex.destroy', $item) }}" class="d-inline">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-sm btn-soft-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce centrex ?')">
-                            Supprimer
-                        </button>
-                    </form>
+                        <a href="{{ route('admin.centrex.edit', $item) }}" class="btn btn-sm btn-soft-secondary">
+                            Modifier
+                        </a>
+                        <form method="POST" action="{{ route('admin.centrex.destroy', $item) }}" style="display: inline;">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-soft-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce centrex ?')">
+                                Supprimer
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         @endforeach
     </div>
+
+    <!-- Message si aucun résultat -->
+    <div id="no-results" class="card" style="display: none;">
+        <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <p class="empty-title">Aucun résultat</p>
+            <p class="empty-description">Aucun centrex ne correspond à votre recherche.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('centrex-search').addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            const items = document.querySelectorAll('.centrex-list-item');
+            let visibleCount = 0;
+
+            items.forEach(function(item) {
+                const name = item.dataset.name || '';
+                const ip = item.dataset.ip || '';
+                const description = item.dataset.description || '';
+                const matches = name.includes(query) || ip.includes(query) || description.includes(query);
+
+                item.style.display = matches ? '' : 'none';
+                if (matches) visibleCount++;
+            });
+
+            document.getElementById('no-results').style.display = visibleCount === 0 ? '' : 'none';
+        });
+    </script>
 @else
     <div class="card">
         <div class="empty-state">
@@ -98,7 +138,7 @@
             <p class="empty-title">Aucun centrex</p>
             <p class="empty-description">Vous n'avez pas encore de centrex enregistrés. Commencez par en créer un.</p>
             <a href="{{ route('admin.centrex.create') }}" class="btn btn-primary">
-                ➕ Créer un centrex
+                + Créer un centrex
             </a>
         </div>
     </div>
