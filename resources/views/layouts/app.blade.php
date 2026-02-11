@@ -96,7 +96,7 @@
             </div>
         </footer>
     </div>
-
+{{-- 
     <script>
         // Apply saved theme immediately to prevent flash
         (function() {
@@ -165,7 +165,7 @@
             const savedTheme = localStorage.getItem('theme') || 'light';
             updateThemeIcons(savedTheme);
         });
-    </script>
+    </script> --}}
 
     @stack('scripts')
 </body>
