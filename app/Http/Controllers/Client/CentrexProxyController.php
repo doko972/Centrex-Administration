@@ -55,7 +55,7 @@ class CentrexProxyController extends Controller
     {
         $this->checkAccess($centrex);
 
-        return $this->proxy($request, $centrex);
+        return view('client.centrex-view', compact('centrex'));
     }
 
     /**
