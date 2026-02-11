@@ -6,8 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Centrex;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use GuzzleHttp\Client;
+use GuzzleHttp\Cookie\CookieJar;
 
 class CentrexProxyController extends Controller
 {
@@ -25,6 +26,26 @@ class CentrexProxyController extends Controller
         if (!$centrex->is_active) {
             abort(403, 'Ce centrex n\'est pas disponible actuellement.');
         }
+    }
+
+    /**
+     * Récupérer ou créer le CookieJar pour ce centrex
+     */
+    private function getCookieJar(int $centrexId): CookieJar
+    {
+        $sessionKey = "centrex_cookies_{$centrexId}";
+        $cookieData = session($sessionKey, []);
+
+        return new CookieJar(false, $cookieData);
+    }
+
+    /**
+     * Sauvegarder le CookieJar en session
+     */
+    private function saveCookieJar(int $centrexId, CookieJar $jar): void
+    {
+        $sessionKey = "centrex_cookies_{$centrexId}";
+        session([$sessionKey => $jar->toArray()]);
     }
 
     /**
@@ -53,7 +74,6 @@ class CentrexProxyController extends Controller
 
         $targetUrl = "http://{$centrex->ip_address}" . $path;
 
-        // Log en mode debug uniquement
         if (config('app.debug')) {
             Log::debug('Proxy Request:', [
                 'method' => $request->method(),
@@ -62,38 +82,46 @@ class CentrexProxyController extends Controller
         }
 
         try {
-            $httpClient = Http::withOptions([
+            // Récupérer le CookieJar de la session
+            $cookieJar = $this->getCookieJar($centrex->id);
+
+            // Créer le client Guzzle
+            $client = new Client([
                 'verify' => false,
                 'timeout' => 60,
                 'connect_timeout' => 10,
-            ])
-            ->withHeaders([
-                'User-Agent' => 'Centrex-Dashboard-Proxy/1.0',
-            ])
-            ->withBasicAuth($centrex->login, $centrex->getDecryptedPassword());
+                'allow_redirects' => [
+                    'max' => 5,
+                    'track_redirects' => true,
+                ],
+                'cookies' => $cookieJar,
+                'auth' => [$centrex->login, $centrex->getDecryptedPassword()],
+                'headers' => [
+                    'User-Agent' => 'Centrex-Dashboard-Proxy/1.0',
+                ],
+            ]);
+
+            // Préparer les options de requête
+            $options = [];
 
             // Exécuter la requête selon la méthode HTTP
-            $method = strtolower($request->method());
-            $response = match ($method) {
-                'post' => $httpClient->asForm()->post($targetUrl, $request->all()),
-                'get' => $httpClient->get($targetUrl),
-                default => $httpClient->{$method}($targetUrl, $request->all()),
-            };
+            $method = strtoupper($request->method());
 
-            // Vérifier si le serveur distant a retourné une erreur
-            if ($response->failed()) {
-                Log::warning('Proxy: Erreur serveur distant', [
-                    'status' => $response->status(),
-                    'url' => $targetUrl,
-                ]);
+            if ($method === 'POST') {
+                $options['form_params'] = $request->all();
             }
 
-            $body = $response->body();
-            $contentType = $response->header('Content-Type') ?? 'text/html';
+            $response = $client->request($method, $targetUrl, $options);
+
+            // Sauvegarder les cookies mis à jour
+            $this->saveCookieJar($centrex->id, $cookieJar);
+
+            $body = (string) $response->getBody();
+            $contentType = $response->getHeaderLine('Content-Type') ?: 'text/html';
 
             // Assets (JS, CSS, images, fonts) : retourner sans modification
             if ($this->isAsset($path, $contentType)) {
-                return response($body, $response->status())
+                return response($body, $response->getStatusCode())
                     ->withHeaders([
                         'Content-Type' => $contentType,
                         'Cache-Control' => 'public, max-age=86400',
@@ -105,11 +133,34 @@ class CentrexProxyController extends Controller
                 $body = $this->rewriteHtml($body, $centrex->id);
             }
 
-            return response($body, $response->status())
+            return response($body, $response->getStatusCode())
                 ->withHeaders([
                     'Content-Type' => $contentType,
                     'X-Frame-Options' => 'SAMEORIGIN',
                 ]);
+
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            $response = $e->getResponse();
+            $statusCode = $response ? $response->getStatusCode() : 500;
+
+            Log::warning('Proxy: Client Error', [
+                'status' => $statusCode,
+                'url' => $targetUrl,
+            ]);
+
+            if ($response) {
+                $body = (string) $response->getBody();
+                $contentType = $response->getHeaderLine('Content-Type') ?: 'text/html';
+
+                if (str_contains($contentType, 'text/html')) {
+                    $body = $this->rewriteHtml($body, $centrex->id);
+                }
+
+                return response($body, $statusCode)
+                    ->withHeaders(['Content-Type' => $contentType]);
+            }
+
+            return response('Erreur: Ressource non trouvée', $statusCode);
 
         } catch (\Exception $e) {
             Log::error('Proxy: Exception', [
