@@ -49,6 +49,24 @@ class CentrexProxyController extends Controller
     }
 
     /**
+     * Vérifier si une session est déjà établie pour ce centrex
+     */
+    private function hasSession(int $centrexId): bool
+    {
+        $sessionKey = "centrex_authenticated_{$centrexId}";
+        return session($sessionKey, false);
+    }
+
+    /**
+     * Marquer la session comme établie
+     */
+    private function markAuthenticated(int $centrexId): void
+    {
+        $sessionKey = "centrex_authenticated_{$centrexId}";
+        session([$sessionKey => true]);
+    }
+
+    /**
      * Afficher la page avec iframe du centrex
      */
     public function show(Request $request, Centrex $centrex)
@@ -85,8 +103,8 @@ class CentrexProxyController extends Controller
             // Récupérer le CookieJar de la session
             $cookieJar = $this->getCookieJar($centrex->id);
 
-            // Créer le client Guzzle
-            $client = new Client([
+            // Configuration de base du client
+            $clientConfig = [
                 'verify' => false,
                 'timeout' => 60,
                 'connect_timeout' => 10,
@@ -95,13 +113,19 @@ class CentrexProxyController extends Controller
                     'track_redirects' => true,
                 ],
                 'cookies' => $cookieJar,
-                'auth' => [$centrex->login, $centrex->getDecryptedPassword()],
                 'headers' => [
                     'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                     'Referer' => "http://{$centrex->ip_address}/admin/",
                     'Origin' => "http://{$centrex->ip_address}",
                 ],
-            ]);
+            ];
+
+            // Ajouter l'auth Basic uniquement si pas encore authentifié
+            if (!$this->hasSession($centrex->id)) {
+                $clientConfig['auth'] = [$centrex->login, $centrex->getDecryptedPassword()];
+            }
+
+            $client = new Client($clientConfig);
 
             // Préparer les options de requête
             $options = [];
@@ -115,8 +139,9 @@ class CentrexProxyController extends Controller
 
             $response = $client->request($method, $targetUrl, $options);
 
-            // Sauvegarder les cookies mis à jour
+            // Sauvegarder les cookies mis à jour et marquer comme authentifié
             $this->saveCookieJar($centrex->id, $cookieJar);
+            $this->markAuthenticated($centrex->id);
 
             $body = (string) $response->getBody();
             $contentType = $response->getHeaderLine('Content-Type') ?: 'text/html';
@@ -144,6 +169,15 @@ class CentrexProxyController extends Controller
         } catch (\GuzzleHttp\Exception\ClientException $e) {
             $response = $e->getResponse();
             $statusCode = $response ? $response->getStatusCode() : 500;
+
+            // Si 401 et qu'on était authentifié, réinitialiser et réessayer
+            if ($statusCode === 401 && $this->hasSession($centrex->id)) {
+                session()->forget("centrex_authenticated_{$centrex->id}");
+                session()->forget("centrex_cookies_{$centrex->id}");
+
+                // Réessayer avec authentification (une seule fois)
+                return $this->proxy($request, $centrex, $any);
+            }
 
             Log::warning('Proxy: Client Error', [
                 'status' => $statusCode,
@@ -216,20 +250,28 @@ class CentrexProxyController extends Controller
         <script>
         (function() {
             var proxyBase = "{$proxyBase}";
+
+            function rewriteUrl(url) {
+                if (typeof url !== "string") return url;
+                // Ne pas réécrire si l'URL contient déjà le proxyBase
+                if (url.indexOf(proxyBase) !== -1) return url;
+                // Ne pas réécrire les URLs absolues externes
+                if (url.startsWith("http://") || url.startsWith("https://")) return url;
+                // Réécrire les URLs relatives
+                if (url.startsWith("/")) {
+                    return proxyBase + url;
+                }
+                return url;
+            }
+
             var origOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url) {
-                if (url.startsWith("/")) {
-                    url = proxyBase + url;
-                }
-                return origOpen.apply(this, [method, url]);
+                return origOpen.apply(this, [method, rewriteUrl(url)]);
             };
 
             var origFetch = window.fetch;
             window.fetch = function(url, options) {
-                if (typeof url === "string" && url.startsWith("/")) {
-                    url = proxyBase + url;
-                }
-                return origFetch.apply(this, [url, options]);
+                return origFetch.apply(this, [rewriteUrl(url), options]);
             };
         })();
         </script>
