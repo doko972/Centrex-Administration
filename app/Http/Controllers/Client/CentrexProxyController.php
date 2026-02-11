@@ -246,6 +246,16 @@ class CentrexProxyController extends Controller
                     // Formulaire standard - form_params gère les tableaux imbriqués automatiquement
                     $options['form_params'] = $request->all();
                     Log::debug('Proxy: POST form_params', ['params' => array_keys($request->all())]);
+
+                    // Debug spécifique pour IVR
+                    if (str_contains($targetUrl, 'display=ivr')) {
+                        $entries = $request->input('entries');
+                        Log::debug('Proxy: IVR entries structure', [
+                            'entries_type' => gettype($entries),
+                            'entries_keys' => is_array($entries) ? array_keys($entries) : 'not_array',
+                            'entries_preview' => is_array($entries) ? json_encode($entries) : $entries,
+                        ]);
+                    }
                 }
             }
 
