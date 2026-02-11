@@ -245,7 +245,18 @@ class CentrexProxyController extends Controller
                 } else {
                     // Formulaire standard
                     $options['form_params'] = $request->all();
+                    Log::debug('Proxy: POST form_params', ['params' => array_keys($request->all())]);
                 }
+            }
+
+            // Logger les détails pour debug
+            if ($method === 'POST' && config('app.debug')) {
+                Log::debug('Proxy POST Details:', [
+                    'url' => $targetUrl,
+                    'content_type' => $request->header('Content-Type'),
+                    'has_files' => count($request->allFiles()) > 0,
+                    'param_keys' => array_keys($request->all()),
+                ]);
             }
 
             $response = $client->request($method, $targetUrl, $options);
@@ -369,6 +380,30 @@ class CentrexProxyController extends Controller
                     'Content-Type' => $contentType,
                     'X-Frame-Options' => 'SAMEORIGIN',
                 ]);
+
+        } catch (\GuzzleHttp\Exception\ServerException $e) {
+            // Erreur 5xx du serveur FreePBX
+            $response = $e->getResponse();
+            $statusCode = $response ? $response->getStatusCode() : 500;
+            $body = $response ? (string) $response->getBody() : '';
+
+            Log::error('Proxy: FreePBX Server Error', [
+                'status' => $statusCode,
+                'url' => $targetUrl,
+                'response_preview' => substr($body, 0, 500),
+            ]);
+
+            // Retourner la réponse d'erreur de FreePBX (peut contenir des infos utiles)
+            if ($response) {
+                $contentType = $response->getHeaderLine('Content-Type') ?: 'text/html';
+                if (str_contains($contentType, 'text/html')) {
+                    $body = $this->rewriteHtml($body, $centrex->id, $centrex->ip_address);
+                }
+                return response($body, $statusCode)
+                    ->withHeaders(['Content-Type' => $contentType]);
+            }
+
+            return response('Erreur serveur FreePBX: ' . $e->getMessage(), 500);
 
         } catch (\GuzzleHttp\Exception\ClientException $e) {
             $response = $e->getResponse();
