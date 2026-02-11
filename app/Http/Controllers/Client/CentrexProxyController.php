@@ -225,7 +225,7 @@ class CentrexProxyController extends Controller
 
             // HTML : réécrire les URLs et injecter l'intercepteur AJAX
             if (str_contains($contentType, 'text/html')) {
-                $body = $this->rewriteHtml($body, $centrex->id);
+                $body = $this->rewriteHtml($body, $centrex->id, $centrex->ip_address);
             }
 
             return response($body, $response->getStatusCode())
@@ -262,7 +262,7 @@ class CentrexProxyController extends Controller
                 $contentType = $response->getHeaderLine('Content-Type') ?: 'text/html';
 
                 if (str_contains($contentType, 'text/html')) {
-                    $body = $this->rewriteHtml($body, $centrex->id);
+                    $body = $this->rewriteHtml($body, $centrex->id, $centrex->ip_address);
                 }
 
                 return response($body, $statusCode)
@@ -305,9 +305,12 @@ class CentrexProxyController extends Controller
     /**
      * Réécrire les URLs dans le HTML et injecter l'intercepteur AJAX
      */
-    private function rewriteHtml(string $body, int $centrexId): string
+    private function rewriteHtml(string $body, int $centrexId, string $centrexIp): string
     {
         $proxyBase = url("client/centrex/{$centrexId}/proxy");
+
+        // Réécrire les URLs absolues contenant l'IP du FreePBX
+        $body = preg_replace('/https?:\/\/' . preg_quote($centrexIp, '/') . '(:\d+)?/i', $proxyBase, $body);
 
         // Réécrire les chemins absolus (href, src, action)
         $body = preg_replace('/href=["\']\/((?!http)[^"\']*)["\']/i', 'href="' . $proxyBase . '/$1"', $body);
@@ -318,19 +321,39 @@ class CentrexProxyController extends Controller
         $baseTag = '<base href="' . $proxyBase . '/admin/">';
         $body = preg_replace('/<head>/i', '<head>' . $baseTag, $body, 1);
 
-        // Injecter l'intercepteur AJAX/Fetch
+        // Injecter l'intercepteur AJAX/Fetch et redirections
         $ajaxInterceptor = <<<JS
         <script>
         (function() {
             var proxyBase = "{$proxyBase}";
             var adminBase = proxyBase + "/admin/";
+            var freepbxIp = "{$centrexIp}";
 
             function rewriteUrl(url) {
                 if (typeof url !== "string") return url;
                 // Ne pas réécrire si l'URL contient déjà le proxyBase
                 if (url.indexOf(proxyBase) !== -1) return url;
-                // Ne pas réécrire les URLs absolues externes
-                if (url.startsWith("http://") || url.startsWith("https://")) return url;
+                // Réécrire si l'URL contient l'IP du FreePBX
+                if (url.indexOf(freepbxIp) !== -1) {
+                    try {
+                        var urlObj = new URL(url);
+                        return proxyBase + urlObj.pathname + urlObj.search;
+                    } catch(e) {
+                        return url.replace(new RegExp('https?://' + freepbxIp.replace(/\./g, '\\.') + '(:\\d+)?', 'gi'), proxyBase);
+                    }
+                }
+                // Ne pas réécrire les URLs absolues externes (sauf si c'est une IP privée/localhost)
+                if (url.startsWith("http://") || url.startsWith("https://")) {
+                    // Extraire le hostname de l'URL
+                    try {
+                        var urlObj = new URL(url);
+                        // Si c'est une IP privée ou localhost, c'est probablement le FreePBX
+                        if (urlObj.hostname.match(/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.|localhost)/)) {
+                            return proxyBase + urlObj.pathname + urlObj.search;
+                        }
+                    } catch(e) {}
+                    return url;
+                }
                 // Réécrire les URLs absolues (commençant par /)
                 if (url.startsWith("/")) {
                     return proxyBase + url;
@@ -339,18 +362,84 @@ class CentrexProxyController extends Controller
                 if (url.match(/^[a-zA-Z0-9_-]+\.php/) || url.match(/^[a-zA-Z0-9_-]+\//)) {
                     return adminBase + url;
                 }
+                // Réécrire les query strings seules (?display=xxx)
+                if (url.startsWith("?")) {
+                    return adminBase + "config.php" + url;
+                }
                 return url;
             }
 
+            // Intercepter XMLHttpRequest
             var origOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url) {
                 return origOpen.apply(this, [method, rewriteUrl(url)]);
             };
 
+            // Intercepter fetch
             var origFetch = window.fetch;
             window.fetch = function(url, options) {
                 return origFetch.apply(this, [rewriteUrl(url), options]);
             };
+
+            // Intercepter window.location.href et window.location.assign
+            var locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
+            if (locationDescriptor && locationDescriptor.configurable !== false) {
+                // Créer un proxy pour location
+                var origLocation = window.location;
+                var locationProxy = new Proxy(origLocation, {
+                    set: function(target, prop, value) {
+                        if (prop === 'href' || prop === 'pathname') {
+                            value = rewriteUrl(value);
+                        }
+                        target[prop] = value;
+                        return true;
+                    }
+                });
+            }
+
+            // Intercepter location.assign et location.replace
+            var origAssign = window.location.assign;
+            var origReplace = window.location.replace;
+
+            window.location.assign = function(url) {
+                return origAssign.call(window.location, rewriteUrl(url));
+            };
+
+            window.location.replace = function(url) {
+                return origReplace.call(window.location, rewriteUrl(url));
+            };
+
+            // Intercepter les liens cliqués dynamiquement
+            document.addEventListener('click', function(e) {
+                var link = e.target.closest('a');
+                if (link) {
+                    var href = link.getAttribute('href');
+                    // Ignorer les liens sans href ou avec href="#" ou javascript:
+                    if (!href || href === '#' || href.startsWith('javascript:')) return;
+
+                    var newHref = rewriteUrl(href);
+                    if (newHref !== href) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('[Proxy] Réécriture lien:', href, '->', newHref);
+                        origAssign.call(window.location, newHref);
+                    }
+                }
+            }, true);
+
+            // Intercepter les soumissions de formulaire
+            document.addEventListener('submit', function(e) {
+                var form = e.target;
+                if (form && form.action) {
+                    var newAction = rewriteUrl(form.getAttribute('action') || '');
+                    if (newAction && newAction !== form.getAttribute('action')) {
+                        form.action = newAction;
+                    }
+                }
+            }, true);
+
+            // Debug: Logger les redirections
+            console.log('[Proxy] Intercepteurs installés - proxyBase:', proxyBase);
         })();
         </script>
         JS;
