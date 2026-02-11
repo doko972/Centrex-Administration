@@ -210,37 +210,47 @@ class CentrexProxyController extends Controller
                 ]);
             }
 
-            // Gérer les redirections (301, 302, 303, 307, 308) - suivre côté serveur
-            $maxRedirects = 5;
-            $redirectCount = 0;
-            while (in_array($statusCode, [301, 302, 303, 307, 308]) && $redirectCount < $maxRedirects) {
+            // Gérer les redirections (301, 302, 303, 307, 308)
+            // Pour les GET: suivre côté serveur
+            // Pour les POST: renvoyer au navigateur pour préserver les données de session FreePBX
+            if (in_array($statusCode, [301, 302, 303, 307, 308])) {
                 $location = $response->getHeaderLine('Location');
-                if (!$location) break;
+                if ($location) {
+                    $appUrl = rtrim(config('app.url'), '/');
+                    $proxyBase = "{$appUrl}/client/centrex/{$centrex->id}/proxy";
 
-                // Construire l'URL complète de redirection
-                if (str_starts_with($location, 'http://') || str_starts_with($location, 'https://')) {
-                    $redirectUrl = $location;
-                } elseif (str_starts_with($location, '/')) {
-                    $redirectUrl = "http://{$centrex->ip_address}" . $location;
-                } else {
-                    $redirectUrl = "http://{$centrex->ip_address}/admin/" . $location;
+                    // Construire l'URL de redirection réécrite
+                    if (str_starts_with($location, 'http://') || str_starts_with($location, 'https://')) {
+                        // URL absolue - remplacer l'IP par le proxy
+                        $newLocation = preg_replace(
+                            '/https?:\/\/' . preg_quote($centrex->ip_address, '/') . '(:\d+)?/',
+                            $proxyBase,
+                            $location
+                        );
+                    } elseif (str_starts_with($location, '/')) {
+                        // URL absolue sans host
+                        $newLocation = $proxyBase . $location;
+                    } else {
+                        // URL relative
+                        $newLocation = $proxyBase . '/admin/' . $location;
+                    }
+
+                    Log::debug('Proxy Redirect:', [
+                        'method' => $method,
+                        'original' => $location,
+                        'rewritten' => $newLocation,
+                    ]);
+
+                    // Pour POST, renvoyer la redirection au navigateur
+                    if ($method === 'POST') {
+                        return redirect($newLocation);
+                    }
+
+                    // Pour GET, suivre côté serveur pour éviter les boucles
+                    $response = $client->request('GET', $location, []);
+                    $statusCode = $response->getStatusCode();
+                    $this->saveCookieJar($centrex->id, $cookieJar);
                 }
-
-                Log::debug('Proxy Following Redirect:', [
-                    'from' => $targetUrl,
-                    'to' => $redirectUrl,
-                    'count' => $redirectCount + 1,
-                ]);
-
-                // Suivre la redirection (toujours en GET après un POST redirect)
-                $redirectMethod = in_array($statusCode, [307, 308]) ? $method : 'GET';
-                $response = $client->request($redirectMethod, $redirectUrl, []);
-                $statusCode = $response->getStatusCode();
-                $targetUrl = $redirectUrl;
-                $redirectCount++;
-
-                // Sauvegarder les cookies mis à jour
-                $this->saveCookieJar($centrex->id, $cookieJar);
             }
 
             $body = (string) $response->getBody();
@@ -360,7 +370,13 @@ class CentrexProxyController extends Controller
         // Réécrire les chemins absolus (href, src, action)
         $body = preg_replace('/href=["\']\/((?!http)[^"\']*)["\']/i', 'href="' . $proxyBase . '/$1"', $body);
         $body = preg_replace('/src=["\']\/((?!http)[^"\']*)["\']/i', 'src="' . $proxyBase . '/$1"', $body);
-        $body = preg_replace('/action=["\']\/((?!http)[^"\']*)["\']/i', 'action="' . $proxyBase . '/$1"', $body);
+
+        // Pour les actions de formulaire, s'assurer qu'on utilise config.php pour éviter les redirections 301
+        // /admin?display=xxx -> /proxy/admin/config.php?display=xxx
+        $body = preg_replace('/action=["\']\/admin\?([^"\']*)["\']/i', 'action="' . $proxyBase . '/admin/config.php?$1"', $body);
+        $body = preg_replace('/action=["\']\/admin\/\?([^"\']*)["\']/i', 'action="' . $proxyBase . '/admin/config.php?$1"', $body);
+        // Autres actions
+        $body = preg_replace('/action=["\']\/((?!http|admin\?|admin\/\?)[^"\']*)["\']/i', 'action="' . $proxyBase . '/$1"', $body);
 
         // Supprimer toutes les balises <base> existantes
         $body = preg_replace('/<base[^>]*>/i', '', $body);
@@ -486,9 +502,24 @@ class CentrexProxyController extends Controller
             // Intercepter les soumissions de formulaire
             document.addEventListener('submit', function(e) {
                 var form = e.target;
-                if (form && form.action) {
-                    var newAction = rewriteUrl(form.getAttribute('action') || '');
-                    if (newAction && newAction !== form.getAttribute('action')) {
+                if (form) {
+                    var action = form.getAttribute('action') || '';
+                    var newAction = action;
+
+                    // Cas spécial: /admin?... ou ?... doit devenir /admin/config.php?...
+                    if (action.match(/^\/admin\?/) || action.match(/^\/admin\/\?/)) {
+                        newAction = proxyBase + '/admin/config.php?' + action.split('?')[1];
+                    } else if (action.startsWith('?')) {
+                        newAction = adminBase + 'config.php' + action;
+                    } else if (action) {
+                        newAction = rewriteUrl(action);
+                    } else {
+                        // Pas d'action = soumettre à l'URL actuelle, qui devrait être correcte
+                        return;
+                    }
+
+                    if (newAction !== action) {
+                        console.log('[Proxy Form]', action, '->', newAction);
                         form.action = newAction;
                     }
                 }
