@@ -198,7 +198,54 @@ class CentrexProxyController extends Controller
             $method = strtoupper($request->method());
 
             if ($method === 'POST') {
-                $options['form_params'] = $request->all();
+                $contentType = $request->header('Content-Type', '');
+
+                // Vérifier si c'est un formulaire multipart (avec fichiers)
+                if (str_contains($contentType, 'multipart/form-data') || $request->hasFile('file') || count($request->allFiles()) > 0) {
+                    // Construire les données multipart
+                    $multipart = [];
+
+                    // Ajouter tous les champs du formulaire
+                    foreach ($request->all() as $key => $value) {
+                        if (is_array($value)) {
+                            foreach ($value as $k => $v) {
+                                $multipart[] = [
+                                    'name' => "{$key}[{$k}]",
+                                    'contents' => is_array($v) ? json_encode($v) : (string) $v,
+                                ];
+                            }
+                        } else {
+                            $multipart[] = [
+                                'name' => $key,
+                                'contents' => (string) $value,
+                            ];
+                        }
+                    }
+
+                    // Ajouter tous les fichiers
+                    foreach ($request->allFiles() as $key => $files) {
+                        $files = is_array($files) ? $files : [$files];
+                        foreach ($files as $index => $file) {
+                            if ($file && $file->isValid()) {
+                                $multipart[] = [
+                                    'name' => is_array($request->file($key)) ? "{$key}[{$index}]" : $key,
+                                    'contents' => fopen($file->getRealPath(), 'r'),
+                                    'filename' => $file->getClientOriginalName(),
+                                ];
+                            }
+                        }
+                    }
+
+                    if (!empty($multipart)) {
+                        $options['multipart'] = $multipart;
+                        Log::debug('Proxy: Using multipart form data', ['fields' => count($multipart)]);
+                    } else {
+                        $options['form_params'] = $request->all();
+                    }
+                } else {
+                    // Formulaire standard
+                    $options['form_params'] = $request->all();
+                }
             }
 
             $response = $client->request($method, $targetUrl, $options);
