@@ -94,6 +94,51 @@ Résultat attendu : `🎨 Thème appliqué avec succès !`
 
 ---
 
+## Étape 1b – Configurer Apache pour autoriser l'iframe (Dashboard Centrex)
+
+Cette configuration est nécessaire pour que le Dashboard Centrex Admin puisse charger FreePBX dans une iframe via le reverse proxy Nginx. Sans elle, Apache envoie le header `X-Frame-Options: SAMEORIGIN` qui bloque l'affichage.
+
+### 1b.1 Créer le fichier de configuration Apache
+
+```bash
+nano /etc/apache2/conf-available/freepbx-iframe.conf
+```
+
+Contenu :
+
+```apache
+<IfModule mod_headers.c>
+    Header unset X-Frame-Options
+    Header unset Content-Security-Policy
+</IfModule>
+```
+
+### 1b.2 Activer la configuration
+
+```bash
+a2enmod headers
+a2enconf freepbx-iframe
+```
+
+### 1b.3 Tester et redémarrer Apache
+
+```bash
+apache2ctl configtest
+systemctl restart apache2
+```
+
+Résultat attendu : `Syntax OK` (l'avertissement `AH00558` sur le ServerName est normal et non bloquant).
+
+### 1b.4 Vérifier
+
+```bash
+systemctl status apache2
+```
+
+Résultat attendu : `active (running)`
+
+---
+
 ## Étape 2 – Créer le watcher systemd
 
 ### 2.1 Créer le path unit
@@ -270,7 +315,18 @@ Script complet pour déployer sur un nouveau serveur (après avoir copié `custo
 chown -R asterisk:asterisk /var/www/html/admin/modules/customtheme/
 chmod +x /usr/local/bin/apply_custom_variables.sh
 
-# Application initiale
+# Configuration Apache pour autoriser l'iframe (Dashboard Centrex)
+cat > /etc/apache2/conf-available/freepbx-iframe.conf << 'APACHEEOF'
+<IfModule mod_headers.c>
+    Header unset X-Frame-Options
+    Header unset Content-Security-Policy
+</IfModule>
+APACHEEOF
+a2enmod headers
+a2enconf freepbx-iframe
+apache2ctl configtest && systemctl restart apache2
+
+# Application initiale du thème
 /usr/local/bin/apply_custom_variables.sh -y
 
 # Création du path unit
