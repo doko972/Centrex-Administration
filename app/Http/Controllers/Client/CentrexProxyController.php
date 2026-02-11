@@ -84,6 +84,7 @@ class CentrexProxyController extends Controller
             Log::debug('Proxy Request:', [
                 'method' => $request->method(),
                 'targetUrl' => $targetUrl,
+                'sessionCookies' => session("centrex_cookies_{$centrex->id}", []),
             ]);
         }
 
@@ -123,6 +124,13 @@ class CentrexProxyController extends Controller
 
             // Sauvegarder les cookies mis à jour
             $this->saveCookieJar($centrex->id, $cookieJar);
+
+            if (config('app.debug')) {
+                Log::debug('Proxy Response:', [
+                    'status' => $response->getStatusCode(),
+                    'cookies' => $cookieJar->toArray(),
+                ]);
+            }
 
             $body = (string) $response->getBody();
             $contentType = $response->getHeaderLine('Content-Type') ?: 'text/html';
