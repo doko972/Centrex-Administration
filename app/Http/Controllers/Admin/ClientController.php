@@ -91,19 +91,34 @@ class ClientController extends Controller
      */
     public function update(Request $request, Client $client)
     {
-        $validated = $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'company_name' => 'required|string|max:255',
             'contact_name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
+        ];
+
+        // Ajouter la validation du mot de passe seulement s'il est fourni
+        if ($request->filled('password')) {
+            $rules['password'] = 'min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]+$/';
+        }
+
+        $validated = $request->validate($rules, [
+            'password.regex' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&#).',
         ]);
 
         DB::transaction(function () use ($validated, $client, $request) {
+            // Préparer les données de l'utilisateur
+            $userData = ['name' => $validated['name']];
+
+            // Ajouter le mot de passe si fourni
+            if ($request->filled('password')) {
+                $userData['password'] = $validated['password'];
+            }
+
             // Mettre à jour l'utilisateur
-            $client->user->update([
-                'name' => $validated['name'],
-            ]);
+            $client->user->update($userData);
 
             // Mettre à jour le client
             $client->update([

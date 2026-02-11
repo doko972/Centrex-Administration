@@ -108,13 +108,24 @@
 
         <div style="margin-bottom: 1.5rem;">
             <label for="password" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Mot de passe</label>
-            <input 
-                type="password" 
-                id="password" 
-                name="password" 
-                style="width: 100%;"
-                placeholder="Laisser vide pour conserver l'actuel"
-            >
+            <div style="position: relative;">
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    style="width: 100%; padding-right: 3rem;"
+                    placeholder="Laisser vide pour conserver l'actuel"
+                >
+                <button
+                    type="button"
+                    onclick="togglePassword('password', this)"
+                    style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.25rem; padding: 0.25rem;"
+                    title="Afficher/Masquer le mot de passe"
+                >
+                    <span class="eye-icon">👁️</span>
+                    <span class="eye-off-icon" style="display: none;">🔒</span>
+                </button>
+            </div>
             <small style="color: var(--text-tertiary);">Laisser vide si vous ne souhaitez pas le modifier</small>
         </div>
 
@@ -143,3 +154,23 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    const eyeIcon = button.querySelector('.eye-icon');
+    const eyeOffIcon = button.querySelector('.eye-off-icon');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        eyeIcon.style.display = 'none';
+        eyeOffIcon.style.display = 'inline';
+    } else {
+        input.type = 'password';
+        eyeIcon.style.display = 'inline';
+        eyeOffIcon.style.display = 'none';
+    }
+}
+</script>
+@endpush

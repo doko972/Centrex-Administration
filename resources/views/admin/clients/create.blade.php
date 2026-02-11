@@ -70,15 +70,27 @@
                 <label for="password" class="form-label">
                     Mot de passe <span class="required">*</span>
                 </label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    required
-                    class="form-input"
-                    placeholder="Minimum 8 caractères"
-                >
-                <p class="form-help">Le mot de passe doit contenir au moins 8 caractères.</p>
+                <div style="position: relative;">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                        class="form-input"
+                        placeholder="Minimum 8 caractères"
+                        style="padding-right: 3rem;"
+                    >
+                    <button
+                        type="button"
+                        onclick="togglePassword('password', this)"
+                        style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.25rem; padding: 0.25rem;"
+                        title="Afficher/Masquer le mot de passe"
+                    >
+                        <span class="eye-icon">👁️</span>
+                        <span class="eye-off-icon" style="display: none;">🔒</span>
+                    </button>
+                </div>
+                <p class="form-help">Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.</p>
             </div>
         </div>
 
@@ -149,3 +161,23 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    const eyeIcon = button.querySelector('.eye-icon');
+    const eyeOffIcon = button.querySelector('.eye-off-icon');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        eyeIcon.style.display = 'none';
+        eyeOffIcon.style.display = 'inline';
+    } else {
+        input.type = 'password';
+        eyeIcon.style.display = 'inline';
+        eyeOffIcon.style.display = 'none';
+    }
+}
+</script>
+@endpush
