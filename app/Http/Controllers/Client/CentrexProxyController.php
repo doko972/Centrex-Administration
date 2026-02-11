@@ -219,25 +219,26 @@ class CentrexProxyController extends Controller
                     $appUrl = rtrim(config('app.url'), '/');
                     $proxyBase = "{$appUrl}/client/centrex/{$centrex->id}/proxy";
 
-                    // Construire l'URL de redirection réécrite
+                    // Construire l'URL complète pour FreePBX
                     if (str_starts_with($location, 'http://') || str_starts_with($location, 'https://')) {
-                        // URL absolue - remplacer l'IP par le proxy
-                        $newLocation = preg_replace(
-                            '/https?:\/\/' . preg_quote($centrex->ip_address, '/') . '(:\d+)?/',
-                            $proxyBase,
-                            $location
-                        );
+                        $fullLocation = $location;
                     } elseif (str_starts_with($location, '/')) {
-                        // URL absolue sans host
-                        $newLocation = $proxyBase . $location;
+                        $fullLocation = "http://{$centrex->ip_address}" . $location;
                     } else {
-                        // URL relative
-                        $newLocation = $proxyBase . '/admin/' . $location;
+                        $fullLocation = "http://{$centrex->ip_address}/admin/" . $location;
                     }
+
+                    // Construire l'URL de redirection réécrite pour le navigateur
+                    $newLocation = preg_replace(
+                        '/https?:\/\/' . preg_quote($centrex->ip_address, '/') . '(:\d+)?/',
+                        $proxyBase,
+                        $fullLocation
+                    );
 
                     Log::debug('Proxy Redirect:', [
                         'method' => $method,
                         'original' => $location,
+                        'fullLocation' => $fullLocation,
                         'rewritten' => $newLocation,
                     ]);
 
@@ -246,10 +247,37 @@ class CentrexProxyController extends Controller
                         return redirect($newLocation);
                     }
 
-                    // Pour GET, suivre côté serveur pour éviter les boucles
-                    $response = $client->request('GET', $location, []);
-                    $statusCode = $response->getStatusCode();
-                    $this->saveCookieJar($centrex->id, $cookieJar);
+                    // Pour GET, suivre côté serveur pour éviter les boucles de redirection navigateur
+                    $maxRedirects = 5;
+                    $redirectCount = 0;
+                    $currentUrl = $fullLocation;
+
+                    while ($redirectCount < $maxRedirects) {
+                        $response = $client->request('GET', $currentUrl, []);
+                        $statusCode = $response->getStatusCode();
+                        $this->saveCookieJar($centrex->id, $cookieJar);
+
+                        if (!in_array($statusCode, [301, 302, 303, 307, 308])) {
+                            break;
+                        }
+
+                        $nextLocation = $response->getHeaderLine('Location');
+                        if (!$nextLocation) {
+                            break;
+                        }
+
+                        // Construire l'URL complète
+                        if (str_starts_with($nextLocation, 'http://') || str_starts_with($nextLocation, 'https://')) {
+                            $currentUrl = $nextLocation;
+                        } elseif (str_starts_with($nextLocation, '/')) {
+                            $currentUrl = "http://{$centrex->ip_address}" . $nextLocation;
+                        } else {
+                            $currentUrl = "http://{$centrex->ip_address}/admin/" . $nextLocation;
+                        }
+
+                        $redirectCount++;
+                        Log::debug('Proxy Following GET Redirect:', ['to' => $currentUrl, 'count' => $redirectCount]);
+                    }
                 }
             }
 
