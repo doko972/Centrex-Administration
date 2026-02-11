@@ -210,37 +210,37 @@ class CentrexProxyController extends Controller
                 ]);
             }
 
-            // Gérer les redirections (301, 302, 303, 307, 308)
-            if (in_array($statusCode, [301, 302, 303, 307, 308])) {
+            // Gérer les redirections (301, 302, 303, 307, 308) - suivre côté serveur
+            $maxRedirects = 5;
+            $redirectCount = 0;
+            while (in_array($statusCode, [301, 302, 303, 307, 308]) && $redirectCount < $maxRedirects) {
                 $location = $response->getHeaderLine('Location');
-                if ($location) {
-                    // Utiliser APP_URL pour éviter de prendre l'IP du FreePBX comme host
-                    $appUrl = rtrim(config('app.url'), '/');
-                    $proxyBase = "{$appUrl}/client/centrex/{$centrex->id}/proxy";
+                if (!$location) break;
 
-                    // Réécrire l'URL de redirection
-                    if (str_starts_with($location, 'http://') || str_starts_with($location, 'https://')) {
-                        // URL absolue - remplacer l'IP par le proxy
-                        $location = preg_replace(
-                            '/https?:\/\/' . preg_quote($centrex->ip_address, '/') . '(:\d+)?/',
-                            $proxyBase,
-                            $location
-                        );
-                    } elseif (str_starts_with($location, '/')) {
-                        // URL absolue sans host
-                        $location = $proxyBase . $location;
-                    } else {
-                        // URL relative
-                        $location = $proxyBase . '/admin/' . $location;
-                    }
-
-                    Log::debug('Proxy Redirect:', [
-                        'original' => $response->getHeaderLine('Location'),
-                        'rewritten' => $location,
-                    ]);
-
-                    return redirect($location);
+                // Construire l'URL complète de redirection
+                if (str_starts_with($location, 'http://') || str_starts_with($location, 'https://')) {
+                    $redirectUrl = $location;
+                } elseif (str_starts_with($location, '/')) {
+                    $redirectUrl = "http://{$centrex->ip_address}" . $location;
+                } else {
+                    $redirectUrl = "http://{$centrex->ip_address}/admin/" . $location;
                 }
+
+                Log::debug('Proxy Following Redirect:', [
+                    'from' => $targetUrl,
+                    'to' => $redirectUrl,
+                    'count' => $redirectCount + 1,
+                ]);
+
+                // Suivre la redirection (toujours en GET après un POST redirect)
+                $redirectMethod = in_array($statusCode, [307, 308]) ? $method : 'GET';
+                $response = $client->request($redirectMethod, $redirectUrl, []);
+                $statusCode = $response->getStatusCode();
+                $targetUrl = $redirectUrl;
+                $redirectCount++;
+
+                // Sauvegarder les cookies mis à jour
+                $this->saveCookieJar($centrex->id, $cookieJar);
             }
 
             $body = (string) $response->getBody();
