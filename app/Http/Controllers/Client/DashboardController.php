@@ -22,9 +22,10 @@ class DashboardController extends Controller
             abort(403, 'Aucun profil client associé à cet utilisateur.');
         }
         
-        // Récupérer les centrex actifs associés au client
+        // Récupérer les centrex actifs associés au client (ordre alphabétique)
         $centrex = $client->centrex()
             ->where('is_active', true)
+            ->orderBy('name', 'asc')
             ->get();
         
         return view('client.dashboard', compact('client', 'centrex'));
