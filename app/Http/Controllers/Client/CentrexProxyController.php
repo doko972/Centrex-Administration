@@ -202,25 +202,25 @@ class CentrexProxyController extends Controller
 
                 // Vérifier si c'est un formulaire multipart (avec fichiers)
                 if (str_contains($contentType, 'multipart/form-data') || $request->hasFile('file') || count($request->allFiles()) > 0) {
-                    // Construire les données multipart
+                    // Construire les données multipart avec support des tableaux imbriqués
                     $multipart = [];
 
-                    // Ajouter tous les champs du formulaire
-                    foreach ($request->all() as $key => $value) {
-                        if (is_array($value)) {
-                            foreach ($value as $k => $v) {
+                    // Fonction récursive pour aplatir les tableaux imbriqués
+                    $flattenArray = function($array, $prefix = '') use (&$flattenArray, &$multipart) {
+                        foreach ($array as $key => $value) {
+                            $name = $prefix ? "{$prefix}[{$key}]" : $key;
+                            if (is_array($value)) {
+                                $flattenArray($value, $name);
+                            } else {
                                 $multipart[] = [
-                                    'name' => "{$key}[{$k}]",
-                                    'contents' => is_array($v) ? json_encode($v) : (string) $v,
+                                    'name' => $name,
+                                    'contents' => (string) $value,
                                 ];
                             }
-                        } else {
-                            $multipart[] = [
-                                'name' => $key,
-                                'contents' => (string) $value,
-                            ];
                         }
-                    }
+                    };
+
+                    $flattenArray($request->all());
 
                     // Ajouter tous les fichiers
                     foreach ($request->allFiles() as $key => $files) {
@@ -243,7 +243,7 @@ class CentrexProxyController extends Controller
                         $options['form_params'] = $request->all();
                     }
                 } else {
-                    // Formulaire standard
+                    // Formulaire standard - form_params gère les tableaux imbriqués automatiquement
                     $options['form_params'] = $request->all();
                     Log::debug('Proxy: POST form_params', ['params' => array_keys($request->all())]);
                 }
