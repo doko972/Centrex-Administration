@@ -200,11 +200,23 @@ class CentrexProxyController extends Controller
 
             $statusCode = $response->getStatusCode();
 
+            // Logger le status code pour debug
+            if ($method === 'POST') {
+                Log::debug('Proxy POST Response:', [
+                    'url' => $targetUrl,
+                    'status' => $statusCode,
+                    'hasLocation' => $response->hasHeader('Location'),
+                    'location' => $response->getHeaderLine('Location'),
+                ]);
+            }
+
             // Gérer les redirections (301, 302, 303, 307, 308)
             if (in_array($statusCode, [301, 302, 303, 307, 308])) {
                 $location = $response->getHeaderLine('Location');
                 if ($location) {
-                    $proxyBase = url("client/centrex/{$centrex->id}/proxy");
+                    // Utiliser APP_URL pour éviter de prendre l'IP du FreePBX comme host
+                    $appUrl = rtrim(config('app.url'), '/');
+                    $proxyBase = "{$appUrl}/client/centrex/{$centrex->id}/proxy";
 
                     // Réécrire l'URL de redirection
                     if (str_starts_with($location, 'http://') || str_starts_with($location, 'https://')) {
@@ -338,7 +350,9 @@ class CentrexProxyController extends Controller
      */
     private function rewriteHtml(string $body, int $centrexId, string $centrexIp): string
     {
-        $proxyBase = url("client/centrex/{$centrexId}/proxy");
+        // Utiliser APP_URL pour éviter de prendre l'IP du FreePBX comme host
+        $appUrl = rtrim(config('app.url'), '/');
+        $proxyBase = "{$appUrl}/client/centrex/{$centrexId}/proxy";
 
         // Réécrire les URLs absolues contenant l'IP du FreePBX
         $body = preg_replace('/https?:\/\/' . preg_quote($centrexIp, '/') . '(:\d+)?/i', $proxyBase, $body);
