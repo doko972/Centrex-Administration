@@ -169,14 +169,12 @@ class CentrexProxyController extends Controller
 
         try {
             // Créer le client Guzzle SANS Basic Auth (on utilise la session)
+            // IMPORTANT: Ne pas suivre les redirections automatiquement pour pouvoir les réécrire
             $client = new Client([
                 'verify' => false,
                 'timeout' => 60,
                 'connect_timeout' => 10,
-                'allow_redirects' => [
-                    'max' => 5,
-                    'track_redirects' => true,
-                ],
+                'allow_redirects' => false, // On gère les redirections manuellement
                 'cookies' => $cookieJar,
                 'headers' => [
                     'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -199,6 +197,39 @@ class CentrexProxyController extends Controller
 
             // Sauvegarder les cookies mis à jour
             $this->saveCookieJar($centrex->id, $cookieJar);
+
+            $statusCode = $response->getStatusCode();
+
+            // Gérer les redirections (301, 302, 303, 307, 308)
+            if (in_array($statusCode, [301, 302, 303, 307, 308])) {
+                $location = $response->getHeaderLine('Location');
+                if ($location) {
+                    $proxyBase = url("client/centrex/{$centrex->id}/proxy");
+
+                    // Réécrire l'URL de redirection
+                    if (str_starts_with($location, 'http://') || str_starts_with($location, 'https://')) {
+                        // URL absolue - remplacer l'IP par le proxy
+                        $location = preg_replace(
+                            '/https?:\/\/' . preg_quote($centrex->ip_address, '/') . '(:\d+)?/',
+                            $proxyBase,
+                            $location
+                        );
+                    } elseif (str_starts_with($location, '/')) {
+                        // URL absolue sans host
+                        $location = $proxyBase . $location;
+                    } else {
+                        // URL relative
+                        $location = $proxyBase . '/admin/' . $location;
+                    }
+
+                    Log::debug('Proxy Redirect:', [
+                        'original' => $response->getHeaderLine('Location'),
+                        'rewritten' => $location,
+                    ]);
+
+                    return redirect($location);
+                }
+            }
 
             $body = (string) $response->getBody();
             $contentType = $response->getHeaderLine('Content-Type') ?: 'text/html';
