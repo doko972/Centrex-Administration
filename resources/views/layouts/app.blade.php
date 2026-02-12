@@ -10,6 +10,9 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📞</text></svg>">
 
+    <!-- Lottie Player -->
+    <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
+
     <!-- Styles -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
@@ -19,7 +22,7 @@
         <nav class="navbar">
             <div class="navbar-container">
                 <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : route('client.dashboard') }}" class="navbar-brand">
-                    <span class="brand-icon">📞</span>
+                    <dotlottie-player src="{{ asset('logo.json') }}" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></dotlottie-player>
                     <span class="brand-text">Centrex</span>
                 </a>
 
