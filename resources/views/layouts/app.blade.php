@@ -23,7 +23,7 @@
             <div class="navbar-container">
                 <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : route('client.dashboard') }}" class="navbar-brand">
                     <dotlottie-player id="logo-animation" src="{{ asset('logo.json') }}" background="transparent" speed="1" style="width: 40px; height: 40px;" autoplay></dotlottie-player>
-                    <span class="brand-text">Centrex</span>
+                    <span class="brand-text">Centrex-Manager</span>
                 </a>
 
                 <div class="navbar-nav">
@@ -39,6 +39,10 @@
                         <a href="{{ route('admin.centrex.index') }}" class="nav-link {{ request()->routeIs('admin.centrex.*') ? 'active' : '' }}">
                             <span class="nav-icon">📞</span>
                             Centrex
+                        </a>
+                        <a href="{{ route('admin.ipbx.index') }}" class="nav-link {{ request()->routeIs('admin.ipbx.*') ? 'active' : '' }}">
+                            <span class="nav-icon">🖥️</span>
+                            IPBX
                         </a>
                     @else
                         <a href="{{ route('client.dashboard') }}" class="nav-link {{ request()->routeIs('client.dashboard') ? 'active' : '' }}">

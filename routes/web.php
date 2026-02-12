@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ClientCentrexController;
 use App\Http\Controllers\Client\DashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\AdminCentrexProxyController;
+use App\Http\Controllers\Admin\IpbxController;
 use App\Http\Controllers\Client\CentrexProxyController;
 
 /*
@@ -72,6 +73,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Routes CRUD Centrex (après les routes proxy pour éviter les conflits)
     Route::resource('centrex', CentrexController::class);
+
+    // Routes CRUD IPBX
+    Route::resource('ipbx', IpbxController::class);
+    Route::post('/ipbx/{ipbx}/ping', [IpbxController::class, 'ping'])->name('ipbx.ping');
 });
 
 /*
