@@ -8,7 +8,7 @@
     <title>{{ config('app.name', 'Centrex Dashboard') }}</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📞</text></svg>">
+    <link rel="icon" type="image/x-icon" href="{{ asset('logo.ico') }}">
 
     <!-- Lottie Player -->
     <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
@@ -22,7 +22,7 @@
         <nav class="navbar">
             <div class="navbar-container">
                 <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : route('client.dashboard') }}" class="navbar-brand">
-                    <dotlottie-player src="{{ asset('logo.json') }}" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></dotlottie-player>
+                    <dotlottie-player id="logo-animation" src="{{ asset('logo.json') }}" background="transparent" speed="1" style="width: 40px; height: 40px;" autoplay></dotlottie-player>
                     <span class="brand-text">Centrex</span>
                 </a>
 
@@ -139,6 +139,21 @@
             if (userMenu && dropdown && !userMenu.contains(e.target)) {
                 userMenu.classList.remove('open');
                 dropdown.classList.remove('show');
+            }
+        });
+    </script>
+
+    <script>
+        // Logo animation with delay between loops
+        document.addEventListener('DOMContentLoaded', function() {
+            const logo = document.getElementById('logo-animation');
+            if (logo) {
+                logo.addEventListener('complete', function() {
+                    setTimeout(function() {
+                        logo.seek(0);
+                        logo.play();
+                    }, 5000); // 5 secondes entre chaque animation
+                });
             }
         });
     </script>
