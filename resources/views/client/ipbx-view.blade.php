@@ -18,7 +18,7 @@
             </div>
         </div>
         <a href="{{ route('client.ipbx.proxy.root', $ipbx) }}" target="_blank" class="btn btn-outline btn-sm">
-            Ouvrir dans un nouvel onglet
+            Nouvel onglet
         </a>
     </div>
 </div>

@@ -20,7 +20,7 @@
             </div>
         </div>
         <a href="{{ route('client.centrex.proxy.root', $centrex) }}" target="_blank" class="btn btn-outline btn-sm">
-            Ouvrir dans un nouvel onglet
+            Nouvel onglet
         </a>
     </div>
 </div>
