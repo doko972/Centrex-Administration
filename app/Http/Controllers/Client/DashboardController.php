@@ -9,25 +9,31 @@ use Illuminate\Support\Facades\Auth;
 class DashboardController extends Controller
 {
     /**
-     * Afficher le dashboard client avec ses centrex
+     * Afficher le dashboard client avec ses centrex et IPBX
      */
     public function index()
     {
         $user = Auth::user();
-        
-        // Récupérer le client associé à l'utilisateur
+
+        // Recuperer le client associe a l'utilisateur
         $client = $user->client;
-        
+
         if (!$client) {
-            abort(403, 'Aucun profil client associé à cet utilisateur.');
+            abort(403, 'Aucun profil client associe a cet utilisateur.');
         }
-        
-        // Récupérer les centrex actifs associés au client (ordre alphabétique)
+
+        // Recuperer les centrex actifs associes au client (ordre alphabetique)
         $centrex = $client->centrex()
             ->where('is_active', true)
             ->orderBy('name', 'asc')
             ->get();
-        
-        return view('client.dashboard', compact('client', 'centrex'));
+
+        // Recuperer les IPBX actifs associes au client (ordre alphabetique)
+        $ipbx = $client->ipbx()
+            ->where('is_active', true)
+            ->orderBy('client_name', 'asc')
+            ->get();
+
+        return view('client.dashboard', compact('client', 'centrex', 'ipbx'));
     }
 }

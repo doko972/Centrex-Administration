@@ -43,32 +43,35 @@
     <!-- Liste des IPBX -->
     <div id="ipbx-list">
         @foreach($ipbxs as $item)
-            <div class="card mb-md ipbx-list-item"
+            <div class="card mb-md ipbx-list-item ipbx-card"
                  data-id="{{ $item->id }}"
                  data-client="{{ strtolower($item->client_name) }}"
                  data-ip="{{ strtolower($item->ip_address) }}"
                  data-phone="{{ strtolower($item->phone ?? '') }}">
-                <div style="display: flex; align-items: center; gap: 1.5rem;">
-                    <div style="width: 80px; height: 80px; background: var(--bg-tertiary); border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
-                        🖥️
+                <div class="ipbx-card__content">
+                    <div class="ipbx-card__header">
+                        <div class="ipbx-card__image ipbx-card__image--placeholder">
+                            🖥️
+                        </div>
+                        <div class="ipbx-card__title-wrap">
+                            <h3 class="ipbx-card__title">{{ $item->client_name }}</h3>
+                        </div>
                     </div>
 
-                    <div style="flex: 1; min-width: 0;">
-                        <h3 style="margin: 0 0 0.25rem 0;">{{ $item->client_name }}</h3>
+                    <div class="ipbx-card__body">
+                        <h3 class="ipbx-card__name">{{ $item->client_name }}</h3>
                         @if($item->contact_name)
-                            <p style="margin: 0 0 0.25rem 0; color: var(--text-secondary); font-size: 0.875rem;">
+                            <p class="ipbx-card__contact">
                                 Contact: {{ $item->contact_name }}
                             </p>
                         @endif
                         @if($item->phone)
-                            <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.875rem;">
+                            <p class="ipbx-card__phone">
                                 Tel: {{ $item->phone }}
                             </p>
                         @endif
-                        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                            <a href="{{ $item->url }}" target="_blank" rel="noopener noreferrer"
-                               style="font-family: monospace; color: var(--color-primary); text-decoration: none;"
-                               title="Ouvrir dans un nouvel onglet">
+                        <div class="ipbx-card__meta">
+                            <a href="{{ $item->url }}" target="_blank" rel="noopener noreferrer" class="ipbx-card__address" title="Ouvrir dans un nouvel onglet">
                                 {{ $item->ip_address }}:{{ $item->port }} ↗
                             </a>
 
@@ -85,14 +88,14 @@
                             @endif
 
                             @if($item->last_ping)
-                                <span class="last-ping-{{ $item->id }}" style="color: var(--text-tertiary); font-size: 0.75rem;">
+                                <span class="last-ping-{{ $item->id }} ipbx-card__ping">
                                     Dernier ping: {{ $item->last_ping->format('d/m/Y H:i') }}
                                 </span>
                             @endif
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; flex-shrink: 0; align-items: center;">
+                    <div class="ipbx-card__actions">
                         <button type="button" class="btn btn-sm btn-ghost ping-btn" data-id="{{ $item->id }}" title="Vérifier la connexion">
                             🔄
                         </button>

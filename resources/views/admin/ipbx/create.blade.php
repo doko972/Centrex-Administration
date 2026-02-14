@@ -5,14 +5,14 @@
     <h1 class="page-title">Nouvel IPBX</h1>
     <div class="page-actions">
         <a href="{{ route('admin.ipbx.index') }}" class="btn btn-ghost">
-            ← Retour à la liste
+            Retour a la liste
         </a>
     </div>
 </div>
 
 @if($errors->any())
     <div class="alert alert-danger mb-lg">
-        <span class="alert-icon">⚠</span>
+        <span class="alert-icon">!</span>
         <div class="alert-content">
             <p class="alert-title">Erreurs de validation</p>
             <ul style="margin: 0.5rem 0 0 1rem; padding: 0;">
@@ -29,7 +29,7 @@
 
     <div class="card mb-lg">
         <h3 class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-            👤 Informations client
+            Informations client
         </h3>
 
         <div class="form-group">
@@ -49,7 +49,7 @@
             </div>
 
             <div class="form-group">
-                <label for="phone" class="form-label">Téléphone</label>
+                <label for="phone" class="form-label">Telephone</label>
                 <input type="text" id="phone" name="phone" class="form-input" value="{{ old('phone') }}">
             </div>
         </div>
@@ -62,7 +62,7 @@
 
     <div class="card mb-lg">
         <h3 class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-            🖥️ Connexion IPBX
+            Connexion IPBX
         </h3>
 
         <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 1rem;">
@@ -77,23 +77,62 @@
             </div>
         </div>
 
-        <p class="form-help">L'URL d'accès sera: https://[IP]:[Port]</p>
+        <p class="form-help">L'URL d'acces sera: https://[IP]:[Port]</p>
     </div>
 
     <div class="card mb-lg">
         <h3 class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-            📝 Notes
+            Authentification FreePBX (optionnel)
+        </h3>
+
+        <p class="form-help" style="margin-bottom: 1rem;">
+            Si vous renseignez ces identifiants, le proxy se connectera automatiquement au FreePBX pour les clients.
+            Laissez vide pour un acces direct sans proxy d'authentification.
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="login" class="form-label">Login FreePBX</label>
+                <input type="text" id="login" name="login" class="form-input" value="{{ old('login') }}" placeholder="admin">
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Mot de passe FreePBX</label>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Mot de passe">
+                    <button type="button" onclick="togglePassword('password')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary);">
+                        Voir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-lg">
+        <h3 class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+            Notes
         </h3>
 
         <div class="form-group">
             <label for="description" class="form-label">Description / Notes</label>
-            <textarea id="description" name="description" class="form-textarea" rows="3" placeholder="Informations complémentaires...">{{ old('description') }}</textarea>
+            <textarea id="description" name="description" class="form-textarea" rows="3" placeholder="Informations complementaires...">{{ old('description') }}</textarea>
         </div>
     </div>
 
     <div class="form-actions">
         <a href="{{ route('admin.ipbx.index') }}" class="btn btn-ghost">Annuler</a>
-        <button type="submit" class="btn btn-primary">Créer l'IPBX</button>
+        <button type="submit" class="btn btn-primary">Creer l'IPBX</button>
     </div>
 </form>
+
+<script>
+function togglePassword(fieldId) {
+    var field = document.getElementById(fieldId);
+    if (field.type === 'password') {
+        field.type = 'text';
+    } else {
+        field.type = 'password';
+    }
+}
+</script>
 @endsection

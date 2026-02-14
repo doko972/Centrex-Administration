@@ -11,7 +11,7 @@
             ← Retour
         </a>
         <a href="{{ route('admin.centrex.create') }}" class="btn btn-primary">
-            + Nouveau Centrex
+            + Nouveau
         </a>
     </div>
 </div>
@@ -40,26 +40,29 @@
     <!-- Liste des centrex -->
     <div id="centrex-list">
         @foreach($centrex as $item)
-            <div class="card mb-md centrex-list-item"
+            <div class="card mb-md centrex-list-item centrex-card"
                  data-name="{{ strtolower($item->name) }}"
                  data-ip="{{ strtolower($item->ip_address) }}"
                  data-description="{{ strtolower($item->description ?? '') }}">
-                <div style="display: flex; align-items: center; gap: 1.5rem;">
-                    @if($item->image)
-                        <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->name }}"
-                            style="width: 80px; height: 80px; object-fit: cover; border-radius: var(--border-radius); flex-shrink: 0;">
-                    @else
-                        <div style="width: 80px; height: 80px; background: var(--bg-tertiary); border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
-                            📞
+                <div class="centrex-card__content">
+                    <div class="centrex-card__header">
+                        @if($item->image)
+                            <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->name }}" class="centrex-card__image">
+                        @else
+                            <div class="centrex-card__image centrex-card__image--placeholder">
+                                📞
+                            </div>
+                        @endif
+                        <div class="centrex-card__title-wrap">
+                            <h3 class="centrex-card__title">{{ $item->name }}</h3>
                         </div>
-                    @endif
+                    </div>
 
-                    <div style="flex: 1; min-width: 0;">
-                        <h3 style="margin: 0 0 0.25rem 0;">{{ $item->name }}</h3>
-                        <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.875rem; font-family: monospace;">
+                    <div class="centrex-card__body">
+                        <p class="centrex-card__address">
                             {{ $item->ip_address }}:{{ $item->port }}
                         </p>
-                        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <div class="centrex-card__meta">
                             @if($item->status === 'online')
                                 <span class="status status-online">En ligne</span>
                             @elseif($item->status === 'offline')
@@ -72,13 +75,13 @@
                                 <span class="badge badge-danger">Inactif</span>
                             @endif
 
-                            <span style="color: var(--text-tertiary); font-size: 0.875rem;">
+                            <span class="centrex-card__clients">
                                 {{ $item->clients->count() }} client(s) associé(s)
                             </span>
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; flex-shrink: 0;">
+                    <div class="centrex-card__actions">
                         @if($item->is_active && $item->status === 'online')
                             <a href="{{ route('admin.centrex.view', $item) }}" class="btn btn-sm btn-primary">
                                 Ouvrir FreePBX

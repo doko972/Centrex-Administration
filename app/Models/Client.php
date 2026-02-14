@@ -39,4 +39,13 @@ class Client extends Model
         return $this->belongsToMany(Centrex::class, 'client_centrex')
                     ->withTimestamps();
     }
+
+    /**
+     * Relation Many-to-Many avec Ipbx
+     */
+    public function ipbx()
+    {
+        return $this->belongsToMany(Ipbx::class, 'client_ipbx')
+                    ->withTimestamps();
+    }
 }

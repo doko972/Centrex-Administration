@@ -5,14 +5,14 @@
     <h1 class="page-title">Modifier l'IPBX</h1>
     <div class="page-actions">
         <a href="{{ route('admin.ipbx.index') }}" class="btn btn-ghost">
-            ← Retour à la liste
+            Retour a la liste
         </a>
     </div>
 </div>
 
 @if($errors->any())
     <div class="alert alert-danger mb-lg">
-        <span class="alert-icon">⚠</span>
+        <span class="alert-icon">!</span>
         <div class="alert-content">
             <p class="alert-title">Erreurs de validation</p>
             <ul style="margin: 0.5rem 0 0 1rem; padding: 0;">
@@ -30,7 +30,7 @@
 
     <div class="card mb-lg">
         <h3 class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-            👤 Informations client
+            Informations client
         </h3>
 
         <div class="form-group">
@@ -50,7 +50,7 @@
             </div>
 
             <div class="form-group">
-                <label for="phone" class="form-label">Téléphone</label>
+                <label for="phone" class="form-label">Telephone</label>
                 <input type="text" id="phone" name="phone" class="form-input" value="{{ old('phone', $ipbx->phone) }}">
             </div>
         </div>
@@ -63,7 +63,7 @@
 
     <div class="card mb-lg">
         <h3 class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-            🖥️ Connexion IPBX
+            Connexion IPBX
         </h3>
 
         <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 1rem;">
@@ -78,12 +78,44 @@
             </div>
         </div>
 
-        <p class="form-help">L'URL d'accès sera: https://{{ $ipbx->ip_address }}:{{ $ipbx->port }}</p>
+        <p class="form-help">L'URL d'acces sera: https://{{ $ipbx->ip_address }}:{{ $ipbx->port }}</p>
     </div>
 
     <div class="card mb-lg">
         <h3 class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-            📝 Notes
+            Authentification FreePBX
+        </h3>
+
+        <p class="form-help" style="margin-bottom: 1rem;">
+            @if($ipbx->login)
+                <span style="color: var(--color-success);">Proxy active</span> - Les identifiants sont configures.
+            @else
+                <span style="color: var(--text-secondary);">Acces direct</span> - Aucun identifiant configure.
+            @endif
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="login" class="form-label">Login FreePBX</label>
+                <input type="text" id="login" name="login" class="form-input" value="{{ old('login', $ipbx->login) }}" placeholder="admin">
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Mot de passe FreePBX</label>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Laisser vide pour ne pas modifier">
+                    <button type="button" onclick="togglePassword('password')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary);">
+                        Voir
+                    </button>
+                </div>
+                <p class="form-help">Laissez vide pour conserver le mot de passe actuel.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-lg">
+        <h3 class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+            Notes
         </h3>
 
         <div class="form-group">
@@ -94,7 +126,7 @@
 
     <div class="card mb-lg">
         <h3 class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-            ⚙️ État
+            Etat
         </h3>
 
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
@@ -116,13 +148,24 @@
                 <input type="checkbox" name="is_active" value="1" {{ old('is_active', $ipbx->is_active) ? 'checked' : '' }}>
                 <span>IPBX actif</span>
             </label>
-            <p class="form-help">Décochez pour désactiver temporairement cet IPBX sans le supprimer.</p>
+            <p class="form-help">Decochez pour desactiver temporairement cet IPBX sans le supprimer.</p>
         </div>
     </div>
 
     <div class="form-actions">
         <a href="{{ route('admin.ipbx.index') }}" class="btn btn-ghost">Annuler</a>
-        <button type="submit" class="btn btn-primary">Mettre à jour</button>
+        <button type="submit" class="btn btn-primary">Mettre a jour</button>
     </div>
 </form>
+
+<script>
+function togglePassword(fieldId) {
+    var field = document.getElementById(fieldId);
+    if (field.type === 'password') {
+        field.type = 'text';
+    } else {
+        field.type = 'password';
+    }
+}
+</script>
 @endsection

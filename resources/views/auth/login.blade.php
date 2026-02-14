@@ -24,6 +24,15 @@
     </div>
 @endif
 
+@if (session('error'))
+    <div class="alert alert-warning mb-lg">
+        <span class="alert-icon">⚠</span>
+        <div class="alert-content">
+            <p class="alert-message mb-0">{{ session('error') }}</p>
+        </div>
+    </div>
+@endif
+
 <form method="POST" action="{{ route('login') }}">
     @csrf
 

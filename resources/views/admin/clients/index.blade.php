@@ -40,49 +40,53 @@
     <!-- Liste des clients -->
     <div id="clients-list">
         @foreach($clients as $client)
-            <div class="card mb-md client-list-item"
+            <div class="card mb-md client-list-item client-card"
                  data-name="{{ strtolower($client->user->name) }}"
                  data-company="{{ strtolower($client->company_name) }}"
                  data-email="{{ strtolower($client->email) }}"
                  data-phone="{{ strtolower($client->phone ?? '') }}">
-                <div style="display: flex; align-items: center; gap: 1.5rem;">
-                    <div class="avatar avatar-lg" style="flex-shrink: 0;">
+                <div class="client-card-header">
+                    <div class="avatar avatar-lg">
                         {{ strtoupper(substr($client->user->name, 0, 1)) }}
                     </div>
-
-                    <div style="flex: 1; min-width: 0;">
-                        <h3 style="margin: 0 0 0.25rem 0;">{{ $client->company_name }}</h3>
-                        <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.875rem;">
-                            {{ $client->user->name }}
-                        </p>
-                        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--text-tertiary);">
-                            <span>{{ $client->email }}</span>
-                            @if($client->phone)
-                                <span>{{ $client->phone }}</span>
-                            @endif
-                            @if($client->is_active)
-                                <span class="status status-active">Actif</span>
-                            @else
-                                <span class="status status-inactive">Inactif</span>
-                            @endif
-                        </div>
+                    <div class="client-card-info">
+                        <h3 class="client-card-title">{{ $client->company_name }}</h3>
+                        <p class="client-card-subtitle">{{ $client->user->name }}</p>
                     </div>
+                    @if($client->is_active)
+                        <span class="status status-active">Actif</span>
+                    @else
+                        <span class="status status-inactive">Inactif</span>
+                    @endif
+                </div>
 
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; flex-shrink: 0;">
-                        <a href="{{ route('admin.clients.show', $client) }}" class="btn btn-sm btn-soft-primary">
-                            Voir
-                        </a>
-                        <a href="{{ route('admin.clients.edit', $client) }}" class="btn btn-sm btn-soft-secondary">
-                            Modifier
-                        </a>
-                        <form method="POST" action="{{ route('admin.clients.destroy', $client) }}" style="display: inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-soft-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce client ?')">
-                                Supprimer
-                            </button>
-                        </form>
+                <div class="client-card-details">
+                    <div class="client-card-detail">
+                        <span class="detail-icon">@</span>
+                        <span>{{ $client->email }}</span>
                     </div>
+                    @if($client->phone)
+                    <div class="client-card-detail">
+                        <span class="detail-icon">T</span>
+                        <span>{{ $client->phone }}</span>
+                    </div>
+                    @endif
+                </div>
+
+                <div class="client-card-actions">
+                    <a href="{{ route('admin.clients.show', $client) }}" class="btn btn-sm btn-soft-primary">
+                        Voir
+                    </a>
+                    <a href="{{ route('admin.clients.edit', $client) }}" class="btn btn-sm btn-soft-secondary">
+                        Modifier
+                    </a>
+                    <form method="POST" action="{{ route('admin.clients.destroy', $client) }}" class="client-card-delete">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-sm btn-soft-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce client ?')">
+                            Supprimer
+                        </button>
+                    </form>
                 </div>
             </div>
         @endforeach

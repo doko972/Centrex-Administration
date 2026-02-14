@@ -29,17 +29,26 @@ class IpbxController extends Controller
             'address' => 'nullable|string',
             'ip_address' => 'required|ip',
             'port' => 'required|integer|between:1,65535',
+            'login' => 'nullable|string|max:255',
+            'password' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
+
+        // Ne pas inclure le password s'il est vide
+        if (empty($validated['password'])) {
+            unset($validated['password']);
+        }
 
         Ipbx::create($validated);
 
         return redirect()->route('admin.ipbx.index')
-            ->with('success', 'IPBX ajouté avec succès.');
+            ->with('success', 'IPBX ajoute avec succes.');
     }
 
     public function show(Ipbx $ipbx)
     {
+        // Charger les clients associes
+        $ipbx->load('clients.user');
         return view('admin.ipbx.show', compact('ipbx'));
     }
 
@@ -58,16 +67,23 @@ class IpbxController extends Controller
             'address' => 'nullable|string',
             'ip_address' => 'required|ip',
             'port' => 'required|integer|between:1,65535',
+            'login' => 'nullable|string|max:255',
+            'password' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
         ]);
 
         $validated['is_active'] = $request->has('is_active');
 
+        // Ne pas modifier le password s'il est vide (conserver l'ancien)
+        if (empty($validated['password'])) {
+            unset($validated['password']);
+        }
+
         $ipbx->update($validated);
 
         return redirect()->route('admin.ipbx.index')
-            ->with('success', 'IPBX mis à jour avec succès.');
+            ->with('success', 'IPBX mis a jour avec succes.');
     }
 
     public function destroy(Ipbx $ipbx)
@@ -75,7 +91,7 @@ class IpbxController extends Controller
         $ipbx->delete();
 
         return redirect()->route('admin.ipbx.index')
-            ->with('success', 'IPBX supprimé avec succès.');
+            ->with('success', 'IPBX supprime avec succes.');
     }
 
     public function ping(Ipbx $ipbx)
