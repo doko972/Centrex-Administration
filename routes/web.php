@@ -12,6 +12,9 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\AdminCentrexProxyController;
 use App\Http\Controllers\Admin\AdminIpbxProxyController;
 use App\Http\Controllers\Admin\IpbxController;
+use App\Http\Controllers\Admin\ConnectionTypeController;
+use App\Http\Controllers\Admin\ProviderController;
+use App\Http\Controllers\Admin\EquipmentController;
 use App\Http\Controllers\Client\CentrexProxyController;
 use App\Http\Controllers\Client\IpbxProxyController;
 
@@ -54,6 +57,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Routes CRUD Clients
     Route::resource('clients', ClientController::class);
+
+    // Routes CRUD pour les données de référence
+    Route::resource('connection-types', ConnectionTypeController::class)->except(['show']);
+    Route::resource('providers', ProviderController::class)->except(['show']);
+    Route::resource('equipment', EquipmentController::class)->except(['show']);
 
     // Routes pour associer Centrex ↔ Clients
     Route::get('/clients/{client}/manage-centrex', [ClientCentrexController::class, 'manage'])->name('clients.manage-centrex');

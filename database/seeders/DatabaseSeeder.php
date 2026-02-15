@@ -21,5 +21,11 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Seed des données de référence
+        $this->call([
+            ConnectionTypeSeeder::class,
+            EquipmentSeeder::class,
+        ]);
     }
 }

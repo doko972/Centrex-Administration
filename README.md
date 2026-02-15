@@ -149,6 +149,8 @@ php artisan migrate
 
 # Créer l'utilisateur admin
 php artisan db:seed --class=AdminUserSeeder
+php artisan db:seed --class=ConnectionTypeSeeder
+php artisan db:seed --class=EquipmentSeeder
 ```
 
 **Identifiants admin par défaut :**
