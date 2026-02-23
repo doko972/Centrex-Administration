@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Centrex;
+use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -107,6 +108,33 @@ class CentrexController extends Controller
 
         return redirect()->route('admin.centrex.index')
             ->with('success', 'Centrex mis à jour avec succès !');
+    }
+
+    /**
+     * Afficher le formulaire d'association des clients
+     */
+    public function manageClients(Centrex $centrex)
+    {
+        $allClients = Client::with('user')->where('is_active', true)->orderBy('company_name')->get();
+        $centrexClients = $centrex->clients->pluck('id')->toArray();
+
+        return view('admin.centrex.manage-clients', compact('centrex', 'allClients', 'centrexClients'));
+    }
+
+    /**
+     * Mettre à jour les clients associés à un centrex
+     */
+    public function updateClients(Request $request, Centrex $centrex)
+    {
+        $validated = $request->validate([
+            'clients' => 'nullable|array',
+            'clients.*' => 'exists:clients,id',
+        ]);
+
+        $centrex->clients()->sync($validated['clients'] ?? []);
+
+        return redirect()->route('admin.centrex.show', $centrex)
+            ->with('success', 'Les clients associés ont été mis à jour avec succès !');
     }
 
     /**

@@ -5,8 +5,9 @@
         <h1>Détails du Centrex</h1>
         <div style="display: flex; gap: 0.5rem;">
             <a href="{{ route('admin.centrex.index') }}" class="btn btn-outline">← Retour</a>
+            <a href="{{ route('admin.centrex.manage-clients', $centrex) }}" class="btn btn-success">Gérer les clients</a>
             @if($centrex->is_active && $centrex->status === 'online')
-                <a href="{{ route('admin.centrex.view', $centrex) }}" class="btn btn-success">Ouvrir FreePBX</a>
+                <a href="{{ route('admin.centrex.view', $centrex) }}" class="btn btn-info">Ouvrir FreePBX</a>
             @endif
             <a href="{{ route('admin.centrex.edit', $centrex) }}" class="btn btn-primary">Modifier</a>
         </div>

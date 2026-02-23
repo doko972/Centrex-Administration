@@ -84,6 +84,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::any('/centrex/{centrex}/proxy', [AdminCentrexProxyController::class, 'proxy'])
         ->name('centrex.proxy.root');
 
+    // Routes pour associer Centrex ↔ Clients (depuis la fiche centrex)
+    Route::get('/centrex/{centrex}/manage-clients', [CentrexController::class, 'manageClients'])->name('centrex.manage-clients');
+    Route::post('/centrex/{centrex}/manage-clients', [CentrexController::class, 'updateClients'])->name('centrex.update-clients');
+
     // Fallback : capturer les URLs mal formées (sans /proxy/) et les rediriger
     Route::any('/centrex/{centrex_id}/{any}', function ($centrex_id, $any, \Illuminate\Http\Request $request) {
         $query = $request->getQueryString();

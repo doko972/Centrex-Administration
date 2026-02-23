@@ -369,7 +369,7 @@ systemctl status customtheme.path
 ```
 
 
-## Super Utilisateur 
+## Super Utilisateur  ?? Mauvaise stratégie ??
 ```bash
 php artisan tinker
 User::create(['name'=>'Super Client', 'email'=>'super@gmail.com', 'password'=>bcrypt('password'), 'role'=>'superclient'])

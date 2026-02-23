@@ -96,28 +96,52 @@ class CentrexProxyController extends Controller
             // 2. Soumettre le formulaire de login
             $response = $client->post("http://{$centrex->ip_address}/admin/config.php", [
                 'form_params' => [
-                    'username' => $centrex->login,
-                    'password' => $centrex->getDecryptedPassword(),
+                    'username'        => $centrex->login,
+                    'password'        => $centrex->getDecryptedPassword(),
+                    'processcomplete' => '1',
                 ],
                 'headers' => [
-                    'Referer' => "http://{$centrex->ip_address}/admin/",
-                    'Origin' => "http://{$centrex->ip_address}",
+                    'Referer'      => "http://{$centrex->ip_address}/admin/",
+                    'Origin'       => "http://{$centrex->ip_address}",
                     'Content-Type' => 'application/x-www-form-urlencoded',
                 ],
             ]);
 
             // Vérifier si la connexion a réussi (pas de formulaire de login dans la réponse)
+            $statusCode = $response->getStatusCode();
             $body = (string) $response->getBody();
-            $isLoggedIn = !str_contains($body, 'id="loginform"') && !str_contains($body, 'id="login_form"');
+            $hasLoginForm = str_contains($body, 'id="loginform"') || str_contains($body, 'id="login_form"');
+
+            // FreePBX retourne 302 après connexion réussie, ou 200 si échec (formulaire affiché)
+            $isLoggedIn = !$hasLoginForm && ($statusCode === 302 || $statusCode === 200);
 
             if ($isLoggedIn) {
-                Log::info("FreePBX Login successful for centrex {$centrex->id}");
+                // Vérification supplémentaire : faire une requête sur une page protégée
+                try {
+                    $testResponse = $client->get("http://{$centrex->ip_address}/admin/config.php", [
+                        'allow_redirects' => false,
+                    ]);
+                    $testStatus = $testResponse->getStatusCode();
+                    $testBody = (string) $testResponse->getBody();
+                    // Si on est redirigé vers login (302 sans contenu authentifié), la session est invalide
+                    if ($testStatus === 302) {
+                        $location = $testResponse->getHeaderLine('Location');
+                        if (str_contains($location, 'login') || str_contains($location, 'index.php')) {
+                            Log::warning("FreePBX session invalid after login for centrex {$centrex->id} - redirected to: {$location}");
+                            return false;
+                        }
+                    }
+                    Log::info("FreePBX Login verified for centrex {$centrex->id} (status: {$testStatus})");
+                } catch (\Exception $e) {
+                    Log::warning("FreePBX Login verify failed for centrex {$centrex->id}: " . $e->getMessage());
+                }
+
                 $this->saveCookieJar($centrex->id, $cookieJar);
                 $this->setAuthenticated($centrex->id, true);
                 return true;
             }
 
-            Log::warning("FreePBX Login failed for centrex {$centrex->id} - login form still present");
+            Log::warning("FreePBX Login failed for centrex {$centrex->id} - status: {$statusCode}, hasLoginForm: " . ($hasLoginForm ? 'yes' : 'no'));
             return false;
 
         } catch (\Exception $e) {
