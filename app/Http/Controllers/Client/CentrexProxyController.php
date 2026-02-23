@@ -159,7 +159,7 @@ class CentrexProxyController extends Controller
         $path = $any ? '/' . $any : '/';
 
         // Nettoyer le path si il contient accidentellement le chemin du proxy
-        $proxyPattern = '/^\/?(client\/centrex\/\d+\/proxy\/?)/';
+        $proxyPattern = '/^\/?((?:client|superclient)\/centrex\/\d+\/proxy\/?)/';
         $path = preg_replace($proxyPattern, '/', $path);
 
         $queryString = $request->getQueryString();
