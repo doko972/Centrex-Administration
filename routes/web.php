@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\EquipmentController;
 use App\Http\Controllers\Client\CentrexProxyController;
 use App\Http\Controllers\Client\IpbxProxyController;
+use App\Http\Controllers\SuperClient\DashboardController as SuperClientDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,8 +28,12 @@ use App\Http\Controllers\Client\IpbxProxyController;
 Route::get('/', function () {
     // Si l'utilisateur est connecté, rediriger selon son rôle
     if (Auth::check()) {
-        if (Auth::user()->isAdmin()) {
+        $user = Auth::user();
+        if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');
+        }
+        if ($user->isSuperClient()) {
+            return redirect()->route('superclient.dashboard');
         }
         return redirect()->route('client.dashboard');
     }
@@ -145,6 +150,46 @@ Route::middleware(['auth', 'client'])->prefix('client')->name('client.')->group(
     Route::any('/ipbx/{ipbx_id}/{any}', function ($ipbx_id, $any, \Illuminate\Http\Request $request) {
         $query = $request->getQueryString();
         $url = "/client/ipbx/{$ipbx_id}/proxy/admin/{$any}" . ($query ? "?{$query}" : "");
+        return redirect($url);
+    })->where('any', '(?!view|proxy).*');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Routes SuperClient (protégées par middleware 'superclient')
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'superclient'])->prefix('superclient')->name('superclient.')->group(function () {
+    Route::get('/dashboard', [SuperClientDashboardController::class, 'index'])->name('dashboard');
+
+    // Proxy vers FreePBX (Centrex) - réutilise le controller client
+    Route::get('/centrex/{centrex}/view', [CentrexProxyController::class, 'show'])->name('centrex.view');
+    Route::any('/centrex/{centrex}/proxy/{any}', [CentrexProxyController::class, 'proxy'])
+        ->where('any', '.*')
+        ->name('centrex.proxy');
+    Route::any('/centrex/{centrex}/proxy', [CentrexProxyController::class, 'proxy'])
+        ->name('centrex.proxy.root');
+
+    // Fallback Centrex
+    Route::any('/centrex/{centrex_id}/{any}', function ($centrex_id, $any, \Illuminate\Http\Request $request) {
+        $query = $request->getQueryString();
+        $url = "/superclient/centrex/{$centrex_id}/proxy/admin/{$any}" . ($query ? "?{$query}" : "");
+        return redirect($url);
+    })->where('any', '(?!view|proxy).*');
+
+    // Proxy vers FreePBX (IPBX) - réutilise le controller client
+    Route::get('/ipbx/{ipbx}/view', [IpbxProxyController::class, 'show'])->name('ipbx.view');
+    Route::any('/ipbx/{ipbx}/proxy/{any}', [IpbxProxyController::class, 'proxy'])
+        ->where('any', '.*')
+        ->name('ipbx.proxy');
+    Route::any('/ipbx/{ipbx}/proxy', [IpbxProxyController::class, 'proxy'])
+        ->name('ipbx.proxy.root');
+
+    // Fallback IPBX
+    Route::any('/ipbx/{ipbx_id}/{any}', function ($ipbx_id, $any, \Illuminate\Http\Request $request) {
+        $query = $request->getQueryString();
+        $url = "/superclient/ipbx/{$ipbx_id}/proxy/admin/{$any}" . ($query ? "?{$query}" : "");
         return redirect($url);
     })->where('any', '(?!view|proxy).*');
 });

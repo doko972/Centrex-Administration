@@ -63,6 +63,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Vérifier si l'utilisateur est superclient
+     */
+    public function isSuperClient()
+    {
+        return $this->role === 'superclient';
+    }
+
+    /**
      * Relation avec Client
      */
     public function client()

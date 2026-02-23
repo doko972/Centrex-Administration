@@ -13,10 +13,19 @@ use GuzzleHttp\Cookie\CookieJar;
 class IpbxProxyController extends Controller
 {
     /**
-     * Vérifier que le client a accès à l'IPBX
+     * Vérifier que l'utilisateur a accès à l'IPBX
      */
     private function checkAccess(Ipbx $ipbx): void
     {
+        // Le superclient a accès à tous les IPBX actifs
+        if (Auth::user()->isSuperClient()) {
+            if (!$ipbx->is_active) {
+                abort(403, 'Cet IPBX n\'est pas disponible actuellement.');
+            }
+            return;
+        }
+
+        // Client normal : vérifier qu'il est associé à cet IPBX
         $client = Auth::user()->client;
 
         if (!$client->ipbx->contains($ipbx->id)) {

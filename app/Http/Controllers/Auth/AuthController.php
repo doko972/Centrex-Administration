@@ -43,6 +43,10 @@ class AuthController extends Controller
                 return redirect()->intended('/admin/dashboard');
             }
 
+            if (Auth::user()->isSuperClient()) {
+                return redirect()->intended('/superclient/dashboard');
+            }
+
             return redirect()->intended('/client/dashboard');
         }
 

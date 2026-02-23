@@ -13,10 +13,19 @@ use GuzzleHttp\Cookie\CookieJar;
 class CentrexProxyController extends Controller
 {
     /**
-     * Vérifier que le client a accès au centrex
+     * Vérifier que l'utilisateur a accès au centrex
      */
     private function checkAccess(Centrex $centrex): void
     {
+        // Le superclient a accès à tous les centrex actifs
+        if (Auth::user()->isSuperClient()) {
+            if (!$centrex->is_active) {
+                abort(403, 'Ce centrex n\'est pas disponible actuellement.');
+            }
+            return;
+        }
+
+        // Client normal : vérifier qu'il est associé à ce centrex
         $client = Auth::user()->client;
 
         if (!$client->centrex->contains($centrex->id)) {

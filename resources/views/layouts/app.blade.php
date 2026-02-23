@@ -25,7 +25,7 @@
         <nav class="navbar">
             <div class="navbar-container">
                 <!-- Logo -->
-                <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : route('client.dashboard') }}" class="navbar-brand">
+                <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->isSuperClient() ? route('superclient.dashboard') : route('client.dashboard')) }}" class="navbar-brand">
                     <span class="logo-light">
                         <dotlottie-player id="logo-animation" src="{{ asset('logo.json') }}" background="transparent" speed="1" style="width: 36px; height: 36px;" autoplay></dotlottie-player>
                     </span>
@@ -84,6 +84,13 @@
                                 </a>
                             </div>
                         </div>
+                    @elseif(Auth::user()->isSuperClient())
+                        <a href="{{ route('superclient.dashboard') }}" class="nav-link {{ request()->routeIs('superclient.dashboard') ? 'active' : '' }}">
+                            <span class="nav-icon">
+                                <dotlottie-player src="{{ asset('icons/icon-home.json') }}" background="transparent" speed="1" style="width: 22px; height: 22px;" loop hover></dotlottie-player>
+                            </span>
+                            Vue globale
+                        </a>
                     @else
                         <a href="{{ route('client.dashboard') }}" class="nav-link {{ request()->routeIs('client.dashboard') ? 'active' : '' }}">
                             <span class="nav-icon">
@@ -112,7 +119,7 @@
                             </div>
                             <div class="user-info">
                                 <span class="user-name">{{ Auth::user()->name }}</span>
-                                <span class="user-role">{{ Auth::user()->isAdmin() ? 'Admin' : 'Client' }}</span>
+                                <span class="user-role">{{ Auth::user()->isAdmin() ? 'Admin' : (Auth::user()->isSuperClient() ? 'Super Client' : 'Client') }}</span>
                             </div>
                             <span class="dropdown-arrow">
                                 <dotlottie-player src="{{ asset('icons/icon-chevron.json') }}" background="transparent" speed="1" style="width: 16px; height: 16px;"></dotlottie-player>
@@ -157,7 +164,7 @@
         <!-- Mobile Navigation Panel -->
         <div class="mobile-nav" id="mobile-nav">
             <div class="mobile-nav-header">
-                <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : route('client.dashboard') }}" class="navbar-brand" onclick="closeMobileMenu()">
+                <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->isSuperClient() ? route('superclient.dashboard') : route('client.dashboard')) }}" class="navbar-brand" onclick="closeMobileMenu()">
                     <span class="logo-light">
                         <dotlottie-player src="{{ asset('logo.json') }}" background="transparent" speed="1" style="width: 32px; height: 32px;"></dotlottie-player>
                     </span>
@@ -222,6 +229,13 @@
                             </span>
                             Équipements
                         </a>
+                    @elseif(Auth::user()->isSuperClient())
+                        <a href="{{ route('superclient.dashboard') }}" class="mobile-nav-link {{ request()->routeIs('superclient.dashboard') ? 'active' : '' }}" onclick="closeMobileMenu()">
+                            <span class="mobile-nav-icon">
+                                <dotlottie-player src="{{ asset('icons/icon-home.json') }}" background="transparent" speed="1" style="width: 24px; height: 24px;" loop hover></dotlottie-player>
+                            </span>
+                            Vue globale
+                        </a>
                     @else
                         <a href="{{ route('client.dashboard') }}" class="mobile-nav-link {{ request()->routeIs('client.dashboard') ? 'active' : '' }}" onclick="closeMobileMenu()">
                             <span class="mobile-nav-icon">
@@ -240,7 +254,7 @@
                     </div>
                     <div class="mobile-user-details">
                         <div class="mobile-user-name">{{ Auth::user()->name }}</div>
-                        <div class="mobile-user-role">{{ Auth::user()->isAdmin() ? 'Administrateur' : 'Client' }}</div>
+                        <div class="mobile-user-role">{{ Auth::user()->isAdmin() ? 'Administrateur' : (Auth::user()->isSuperClient() ? 'Super Client' : 'Client') }}</div>
                     </div>
                 </div>
 

@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class,
             'client' => \App\Http\Middleware\IsClient::class,
+            'superclient' => \App\Http\Middleware\IsSuperClient::class,
         ]);
 
         // Rediriger vers /login quand la session expire
@@ -31,6 +32,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin/ipbx/*/proxy/*',
             'client/ipbx/*/proxy',
             'client/ipbx/*/proxy/*',
+            'superclient/centrex/*/proxy',
+            'superclient/centrex/*/proxy/*',
+            'superclient/ipbx/*/proxy',
+            'superclient/ipbx/*/proxy/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

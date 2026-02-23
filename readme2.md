@@ -367,3 +367,10 @@ systemctl start customtheme.path
 echo "--- Statut du watcher ---"
 systemctl status customtheme.path
 ```
+
+
+## Super Utilisateur 
+```bash
+php artisan tinker
+User::create(['name'=>'Super Client', 'email'=>'super@gmail.com', 'password'=>bcrypt('password'), 'role'=>'superclient'])
+```
