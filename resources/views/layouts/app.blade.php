@@ -119,7 +119,7 @@
                             </div>
                             <div class="user-info">
                                 <span class="user-name">{{ Auth::user()->name }}</span>
-                                <span class="user-role">{{ Auth::user()->isAdmin() ? 'Admin' : (Auth::user()->isSuperClient() ? 'Super Client' : 'Client') }}</span>
+                                <span class="user-role">{{ Auth::user()->isAdmin() ? 'Admin' : (Auth::user()->isSuperClient() ? 'Super Client' : ' ') }}</span>
                             </div>
                             <span class="dropdown-arrow">
                                 <dotlottie-player src="{{ asset('icons/icon-chevron.json') }}" background="transparent" speed="1" style="width: 16px; height: 16px;"></dotlottie-player>
