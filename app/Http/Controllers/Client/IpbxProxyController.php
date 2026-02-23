@@ -268,7 +268,8 @@ class IpbxProxyController extends Controller
                 $location = $response->getHeaderLine('Location');
                 if ($location) {
                     $appUrl = rtrim(config('app.url'), '/');
-                    $proxyBase = "{$appUrl}/client/ipbx/{$ipbx->id}/proxy";
+                    $prefix = Auth::user()->isSuperClient() ? 'superclient' : 'client';
+                    $proxyBase = "{$appUrl}/{$prefix}/ipbx/{$ipbx->id}/proxy";
 
                     if (str_starts_with($location, 'http://') || str_starts_with($location, 'https://')) {
                         $fullLocation = $location;
@@ -447,7 +448,8 @@ class IpbxProxyController extends Controller
     private function rewriteHtml(string $body, int $ipbxId, string $ipbxIp, int $ipbxPort): string
     {
         $appUrl = rtrim(config('app.url'), '/');
-        $proxyBase = "{$appUrl}/client/ipbx/{$ipbxId}/proxy";
+        $prefix = Auth::user()->isSuperClient() ? 'superclient' : 'client';
+        $proxyBase = "{$appUrl}/{$prefix}/ipbx/{$ipbxId}/proxy";
 
         // Réécrire les URLs absolues contenant l'IP de l'IPBX
         $body = preg_replace('/https?:\/\/' . preg_quote($ipbxIp, '/') . '(:\d+)?/i', $proxyBase, $body);

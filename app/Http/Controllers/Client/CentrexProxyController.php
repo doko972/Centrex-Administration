@@ -314,7 +314,8 @@ class CentrexProxyController extends Controller
                 $location = $response->getHeaderLine('Location');
                 if ($location) {
                     $appUrl = rtrim(config('app.url'), '/');
-                    $proxyBase = "{$appUrl}/client/centrex/{$centrex->id}/proxy";
+                    $prefix = Auth::user()->isSuperClient() ? 'superclient' : 'client';
+                    $proxyBase = "{$appUrl}/{$prefix}/centrex/{$centrex->id}/proxy";
 
                     // Construire l'URL complète pour FreePBX
                     if (str_starts_with($location, 'http://') || str_starts_with($location, 'https://')) {
@@ -522,7 +523,8 @@ class CentrexProxyController extends Controller
     {
         // Utiliser APP_URL pour éviter de prendre l'IP du FreePBX comme host
         $appUrl = rtrim(config('app.url'), '/');
-        $proxyBase = "{$appUrl}/client/centrex/{$centrexId}/proxy";
+        $prefix = Auth::user()->isSuperClient() ? 'superclient' : 'client';
+        $proxyBase = "{$appUrl}/{$prefix}/centrex/{$centrexId}/proxy";
 
         // Réécrire les URLs absolues contenant l'IP du FreePBX
         $body = preg_replace('/https?:\/\/' . preg_quote($centrexIp, '/') . '(:\d+)?/i', $proxyBase, $body);
