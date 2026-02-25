@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="card">
-        <h1>Bienvenue sur HR Téélécoms Manager</h1>
+        <h1>Bienvenue</h1>
         <p>Tableau de bord d'administration pour vos centrex FreePBX, et IPBX.</p>
         
         <div style="margin-top: 2rem;">

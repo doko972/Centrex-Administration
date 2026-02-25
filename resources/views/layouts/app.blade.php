@@ -32,7 +32,7 @@
                     <span class="logo-dark" style="display: none;">
                         <dotlottie-player id="logo-animation-dark" src="{{ asset('logo-dark.json') }}" background="transparent" speed="1" style="width: 36px; height: 36px;" autoplay></dotlottie-player>
                     </span>
-                    <span class="brand-text">HR Télécoms-Manager</span>
+                    <span class="brand-text">HR Télécoms</span>
                 </a>
 
                 <!-- Desktop Navigation -->

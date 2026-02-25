@@ -6,16 +6,16 @@
 // Couleurs de base
 :root {
   // Primary Colors
-  --color-primary: #4f46e5;
-  --color-primary-light: #818cf8;
-  --color-primary-dark: #3730a3;
-  --color-primary-50: #eef2ff;
-  --color-primary-100: #e0e7ff;
+  --color-primary: #2563eb;
+  --color-primary-light: #dbeafe;
+  --color-primary-dark: #1d4ed8;
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
 
   // Secondary Colors
-  --color-secondary: #7c3aed;
-  --color-secondary-light: #a78bfa;
-  --color-secondary-dark: #5b21b6;
+  --color-secondary: #3b82f6;
+  --color-secondary-light: #93c5fd;
+  --color-secondary-dark: #1d4ed8;
 
   // Semantic Colors
   --color-success: #10b981;
@@ -70,13 +70,13 @@
   --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
 
   // Colored shadows
-  --shadow-primary: 0 10px 40px -10px rgba(79, 70, 229, 0.35);
+  --shadow-primary: 0 10px 40px -10px rgba(37, 99, 235, 0.35);
   --shadow-success: 0 10px 40px -10px rgba(16, 185, 129, 0.35);
   --shadow-danger: 0 10px 40px -10px rgba(239, 68, 68, 0.35);
 
   // Gradients
-  --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  --gradient-secondary: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+  --gradient-primary: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  --gradient-secondary: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
   --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
@@ -111,16 +111,16 @@
 // Dark theme
 [data-theme="dark"] {
   // Primary Colors (légèrement plus lumineux pour le contraste)
-  --color-primary: #818cf8;
-  --color-primary-light: #a5b4fc;
-  --color-primary-dark: #6366f1;
-  --color-primary-50: rgba(129, 140, 248, 0.1);
-  --color-primary-100: rgba(129, 140, 248, 0.15);
+  --color-primary: #60a5fa;
+  --color-primary-light: #93c5fd;
+  --color-primary-dark: #3b82f6;
+  --color-primary-50: rgba(96, 165, 250, 0.1);
+  --color-primary-100: rgba(96, 165, 250, 0.15);
 
   // Secondary
-  --color-secondary: #a78bfa;
-  --color-secondary-light: #c4b5fd;
-  --color-secondary-dark: #8b5cf6;
+  --color-secondary: #93c5fd;
+  --color-secondary-light: #bfdbfe;
+  --color-secondary-dark: #60a5fa;
 
   // Semantic Colors
   --color-success: #34d399;
@@ -170,7 +170,7 @@
   --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.3);
 
   // Colored shadows (plus subtiles en dark mode)
-  --shadow-primary: 0 10px 40px -10px rgba(129, 140, 248, 0.25);
+  --shadow-primary: 0 10px 40px -10px rgba(96, 165, 250, 0.25);
   --shadow-success: 0 10px 40px -10px rgba(52, 211, 153, 0.25);
   --shadow-danger: 0 10px 40px -10px rgba(248, 113, 113, 0.25);
 

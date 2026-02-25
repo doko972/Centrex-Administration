@@ -13,6 +13,9 @@
     <!-- Styles -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
+    <!-- Lottie Web -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+
     <style>
         .auth-wrapper {
             min-height: 100vh;
@@ -32,7 +35,7 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle, rgba(79, 70, 229, 0.15) 0%, transparent 50%);
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 50%);
             animation: auth-bg-pulse 15s ease-in-out infinite;
         }
 
@@ -43,7 +46,7 @@
             right: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 50%);
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
             animation: auth-bg-pulse 20s ease-in-out infinite reverse;
         }
 
@@ -87,17 +90,10 @@
             margin-bottom: var(--spacing-xl);
         }
 
-        .auth-logo-icon {
-            width: 72px;
-            height: 72px;
-            background: var(--gradient-primary);
-            border-radius: var(--border-radius-xl);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            margin: 0 auto var(--spacing-md);
-            box-shadow: var(--shadow-primary);
+        #auth-lottie-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto var(--spacing-sm);
         }
 
         .auth-logo-text {
@@ -107,6 +103,14 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+
+        [data-theme="dark"] .auth-logo-text {
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            -webkit-text-fill-color: white;
+            color: white;
         }
 
         .auth-title {
@@ -147,8 +151,8 @@
         <div class="auth-container">
             <div class="auth-card">
                 <div class="auth-logo">
-                    <div class="auth-logo-icon">📞</div>
-                    <div class="auth-logo-text">Centrex</div>
+                    <div id="auth-lottie-container"></div>
+                    <div class="auth-logo-text">Téléphonie VOIP</div>
                 </div>
 
                 @yield('content')
@@ -157,9 +161,58 @@
     </div>
 
     <script>
-        // Check for saved theme preference
+        // Appliquer le thème sauvegardé avant le rendu (évite le flash)
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
+
+        let lottieAnim = null;
+        let lottieTimer = null;
+
+        function scheduleReplay() {
+            clearTimeout(lottieTimer);
+            lottieTimer = setTimeout(function () {
+                if (lottieAnim) {
+                    lottieAnim.goToAndPlay(0);
+                }
+            }, 5000);
+        }
+
+        function loadLottieForTheme(theme) {
+            const container = document.getElementById('auth-lottie-container');
+            if (!container || typeof lottie === 'undefined') return;
+
+            clearTimeout(lottieTimer);
+            if (lottieAnim) {
+                lottieAnim.destroy();
+                lottieAnim = null;
+            }
+
+            lottieAnim = lottie.loadAnimation({
+                container: container,
+                renderer: 'svg',
+                loop: false,
+                autoplay: true,
+                path: theme === 'dark' ? '/logo-dark.json' : '/logo.json'
+            });
+
+            // Quand l'animation est terminée, attendre 5s puis relancer
+            lottieAnim.addEventListener('complete', scheduleReplay);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadLottieForTheme(document.documentElement.getAttribute('data-theme') || 'light');
+
+            // Surveiller les changements de thème (ex: toggle depuis app.blade.php partagé)
+            new MutationObserver(function (mutations) {
+                mutations.forEach(function (m) {
+                    if (m.attributeName === 'data-theme') {
+                        loadLottieForTheme(document.documentElement.getAttribute('data-theme') || 'light');
+                    }
+                });
+            }).observe(document.documentElement, { attributes: true });
+        });
     </script>
+
+    @stack('scripts')
 </body>
 </html>
