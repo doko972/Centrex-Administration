@@ -65,19 +65,17 @@
                 value="{{ old('sort_order', $connectionType->sort_order) }}"
                 min="0"
                 class="form-input"
-                style="width: 100px;"
             >
         </div>
 
         <div class="form-group">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+            <label class="form-check">
                 <input
                     type="checkbox"
                     name="is_active"
                     {{ old('is_active', $connectionType->is_active) ? 'checked' : '' }}
-                    style="margin-right: 0.5rem; width: auto;"
                 >
-                <span style="font-weight: 500;">Actif</span>
+                <span class="form-check-label">Actif</span>
             </label>
         </div>
 

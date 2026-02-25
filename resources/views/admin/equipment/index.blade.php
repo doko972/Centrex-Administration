@@ -23,60 +23,56 @@
 @endif
 
 <div class="card">
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="background-color: var(--bg-secondary);">
-                <th style="text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">Nom</th>
-                <th style="text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">Catégorie</th>
-                <th style="text-align: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">Type</th>
-                <th style="text-align: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">Statut</th>
-                <th style="text-align: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">Clients</th>
-                <th style="text-align: right; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($equipment as $eq)
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
                 <tr>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); font-weight: 500;">
-                        {{ $eq->name }}
-                    </td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">
-                        {{ $eq->category ?? '-' }}
-                    </td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-align: center;">
-                        @if($eq->is_predefined)
-                            <span style="background-color: var(--color-primary); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">Prédéfini</span>
-                        @else
-                            <span style="background-color: var(--color-warning); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">Personnalisé</span>
-                        @endif
-                    </td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-align: center;">
-                        @if($eq->is_active)
-                            <span style="background-color: var(--color-success); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">Actif</span>
-                        @else
-                            <span style="background-color: var(--color-danger); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">Inactif</span>
-                        @endif
-                    </td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-align: center;">
-                        {{ $eq->clients->count() }}
-                    </td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-align: right;">
-                        <a href="{{ route('admin.equipment.edit', $eq) }}" class="btn btn-sm btn-outline">Modifier</a>
-                        <form action="{{ route('admin.equipment.destroy', $eq) }}" method="POST" style="display: inline;" onsubmit="return confirm('Supprimer cet équipement ?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
-                        </form>
-                    </td>
+                    <th>Nom</th>
+                    <th>Catégorie</th>
+                    <th class="text-center">Type</th>
+                    <th class="text-center">Statut</th>
+                    <th class="text-center">Clients</th>
+                    <th class="actions-cell">Actions</th>
                 </tr>
-            @empty
-                <tr>
-                    <td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-secondary);">
-                        Aucun équipement. <a href="{{ route('admin.equipment.create') }}">Créer le premier</a>
-                    </td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @forelse($equipment as $eq)
+                    <tr>
+                        <td data-label="Nom" style="font-weight: 500;">{{ $eq->name }}</td>
+                        <td data-label="Catégorie" style="color: var(--text-secondary);">{{ $eq->category ?? '-' }}</td>
+                        <td data-label="Type" class="text-center">
+                            @if($eq->is_predefined)
+                                <span style="background-color: var(--color-primary); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">Prédéfini</span>
+                            @else
+                                <span style="background-color: var(--color-warning); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">Personnalisé</span>
+                            @endif
+                        </td>
+                        <td data-label="Statut" class="text-center">
+                            @if($eq->is_active)
+                                <span style="background-color: var(--color-success); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">Actif</span>
+                            @else
+                                <span style="background-color: var(--color-danger); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">Inactif</span>
+                            @endif
+                        </td>
+                        <td data-label="Clients" class="text-center">{{ $eq->clients->count() }}</td>
+                        <td class="actions-cell">
+                            <a href="{{ route('admin.equipment.edit', $eq) }}" class="btn btn-sm btn-outline">Modifier</a>
+                            <form action="{{ route('admin.equipment.destroy', $eq) }}" method="POST" onsubmit="return confirm('Supprimer cet équipement ?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                            Aucun équipement. <a href="{{ route('admin.equipment.create') }}">Créer le premier</a>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 </div>
 @endsection

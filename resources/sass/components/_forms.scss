@@ -347,6 +347,16 @@
   padding-top: var(--spacing-lg);
   margin-top: var(--spacing-lg);
   border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 
   &.no-border {
     border-top: none;

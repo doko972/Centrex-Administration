@@ -63,27 +63,25 @@
         </div>
 
         <div class="form-group">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+            <label class="form-check">
                 <input
                     type="checkbox"
                     name="is_predefined"
                     checked
-                    style="margin-right: 0.5rem; width: auto;"
                 >
-                <span style="font-weight: 500;">Équipement prédéfini</span>
+                <span class="form-check-label">Équipement prédéfini</span>
             </label>
             <p class="form-help">Les équipements prédéfinis apparaissent dans la liste de sélection lors de la création de clients.</p>
         </div>
 
         <div class="form-group">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+            <label class="form-check">
                 <input
                     type="checkbox"
                     name="is_active"
                     checked
-                    style="margin-right: 0.5rem; width: auto;"
                 >
-                <span style="font-weight: 500;">Actif</span>
+                <span class="form-check-label">Actif</span>
             </label>
         </div>
 

@@ -102,6 +102,67 @@
   text-align: right;
 }
 
+// Responsive card stacking on mobile
+@media (max-width: 640px) {
+  .table-wrapper .table thead {
+    display: none;
+  }
+
+  .table-wrapper .table tbody tr {
+    display: block;
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    background-color: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .table-wrapper .table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-color-light);
+    min-height: 44px;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &[data-label]::before {
+      content: attr(data-label);
+      font-weight: 600;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+      min-width: 90px;
+      margin-right: var(--spacing-sm);
+    }
+  }
+
+  .table-wrapper .table .actions-cell {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    align-items: stretch;
+
+    form {
+      display: block !important;
+    }
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
 // Empty state
 .table-empty {
   text-align: center;
