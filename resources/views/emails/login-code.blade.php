@@ -12,7 +12,7 @@
         .body { padding: 36px 40px; text-align: center; }
         .body p { line-height: 1.7; margin: 0 0 16px; color: #334155; font-size: 15px; text-align: left; }
         .code-block { margin: 28px auto; }
-        .code-digits { display: inline-block; letter-spacing: 12px; font-size: 42px; font-weight: 700; font-family: monospace; color: #1e293b; background: #f1f5f9; border: 2px solid #2563eb; border-radius: 12px; padding: 18px 28px 18px 40px; }
+        .code-digits { display: inline-block; letter-spacing: 12px; font-size: 32px; font-weight: 700; font-family: monospace; color: #1e293b; background: #f1f5f9; border: 2px solid #2563eb; border-radius: 12px; padding: 18px 28px 18px 40px; }
         .expiry { font-size: 13px; color: #64748b; margin: 16px 0 0; }
         .warning { background: #fefce8; border: 1px solid #fde047; border-radius: 6px; padding: 14px 18px; margin: 24px 0; text-align: left; }
         .warning p { color: #854d0e; font-size: 13px; margin: 0; }
