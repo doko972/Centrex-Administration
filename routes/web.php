@@ -19,6 +19,7 @@ use App\Http\Controllers\Client\CentrexProxyController;
 use App\Http\Controllers\Client\IpbxProxyController;
 use App\Http\Controllers\SuperClient\DashboardController as SuperClientDashboardController;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
+use App\Http\Controllers\Auth\TwoFactorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,8 +53,15 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Changement de mot de passe obligatoire (1ère connexion)
+// Vérification 2FA (auth uniquement — pas encore two_factor vérifié)
 Route::middleware('auth')->group(function () {
+    Route::get('/verify-code', [TwoFactorController::class, 'show'])->name('two-factor.verify');
+    Route::post('/verify-code', [TwoFactorController::class, 'verify'])->name('two-factor.verify.submit');
+    Route::post('/verify-code/resend', [TwoFactorController::class, 'resend'])->name('two-factor.resend');
+});
+
+// Changement de mot de passe obligatoire (auth + 2FA validé)
+Route::middleware(['auth', 'two_factor'])->group(function () {
     Route::get('/password/change', [ForcePasswordChangeController::class, 'show'])->name('password.force-change');
     Route::post('/password/change', [ForcePasswordChangeController::class, 'update'])->name('password.force-change.update');
 });
@@ -64,7 +72,7 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'admin', 'must.change.password'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'two_factor', 'must.change.password', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
 
     // Routes CRUD Clients
@@ -131,7 +139,7 @@ Route::middleware(['auth', 'admin', 'must.change.password'])->prefix('admin')->n
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'client', 'must.change.password'])->prefix('client')->name('client.')->group(function () {
+Route::middleware(['auth', 'two_factor', 'must.change.password', 'client'])->prefix('client')->name('client.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Proxy Laravel vers FreePBX (Centrex)
@@ -171,7 +179,7 @@ Route::middleware(['auth', 'client', 'must.change.password'])->prefix('client')-
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'superclient', 'must.change.password'])->prefix('superclient')->name('superclient.')->group(function () {
+Route::middleware(['auth', 'two_factor', 'must.change.password', 'superclient'])->prefix('superclient')->name('superclient.')->group(function () {
     Route::get('/dashboard', [SuperClientDashboardController::class, 'index'])->name('dashboard');
 
     // Proxy vers FreePBX (Centrex) - réutilise le controller client

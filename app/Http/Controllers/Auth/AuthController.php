@@ -30,6 +30,8 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
 
+            $user = Auth::user();
+
             // Logger la connexion réussie
             Log::channel('auth')->info('Connexion réussie', [
                 'email' => $credentials['email'],
@@ -38,16 +40,19 @@ class AuthController extends Controller
                 'timestamp' => now(),
             ]);
 
-            // Rediriger selon le rôle
-            if (Auth::user()->isAdmin()) {
-                return redirect()->intended('/admin/dashboard');
+            // Vérifier si l'appareil est de confiance → passer le 2FA
+            if (TwoFactorController::hasTrustedDevice($request, $user)) {
+                session(['two_factor_verified' => true]);
+
+                if ($user->isAdmin()) return redirect()->intended('/admin/dashboard');
+                if ($user->isSuperClient()) return redirect()->intended('/superclient/dashboard');
+                return redirect()->intended('/client/dashboard');
             }
 
-            if (Auth::user()->isSuperClient()) {
-                return redirect()->intended('/superclient/dashboard');
-            }
+            // Générer et envoyer le code 2FA
+            TwoFactorController::generateAndSendCode($user);
 
-            return redirect()->intended('/client/dashboard');
+            return redirect()->route('two-factor.verify');
         }
 
         // Logger la tentative de connexion échouée
