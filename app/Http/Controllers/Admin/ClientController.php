@@ -8,9 +8,11 @@ use App\Models\User;
 use App\Models\ConnectionType;
 use App\Models\Provider;
 use App\Models\Equipment;
+use App\Mail\WelcomeNewUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class ClientController extends Controller
 {
@@ -67,13 +69,16 @@ class ClientController extends Controller
             'password.regex' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&#).',
         ]);
 
-        DB::transaction(function () use ($validated, $request) {
-            // Créer l'utilisateur
+        $plainPassword = $validated['password'];
+
+        DB::transaction(function () use ($validated, $request, $plainPassword) {
+            // Créer l'utilisateur avec flag de changement de mot de passe obligatoire
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'password' => $validated['password'],
+                'password' => $plainPassword,
                 'role' => 'client',
+                'must_change_password' => true,
             ]);
 
             // Créer le client
@@ -130,8 +135,18 @@ class ClientController extends Controller
             }
         });
 
+        // Envoyer l'email de bienvenue avec les identifiants provisoires
+        $createdUser = User::where('email', $validated['email'])->first();
+        if ($createdUser) {
+            try {
+                Mail::to($createdUser->email)->send(new WelcomeNewUser($createdUser, $plainPassword));
+            } catch (\Exception $e) {
+                // L'email échoue silencieusement pour ne pas bloquer la création
+            }
+        }
+
         return redirect()->route('admin.clients.index')
-            ->with('success', 'Client créé avec succès !');
+            ->with('success', 'Client créé avec succès ! Un email de bienvenue lui a été envoyé.');
     }
 
     /**

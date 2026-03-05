@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\IsAdmin::class,
             'client' => \App\Http\Middleware\IsClient::class,
             'superclient' => \App\Http\Middleware\IsSuperClient::class,
+            'must.change.password' => \App\Http\Middleware\EnsurePasswordIsChanged::class,
         ]);
 
         // Rediriger vers /login quand la session expire
