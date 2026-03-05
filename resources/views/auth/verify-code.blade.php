@@ -33,7 +33,7 @@
         </label>
 
         {{-- 6 inputs individuels --}}
-        <div id="code-inputs" style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.75rem;">
+        <div id="code-inputs" style="display: flex; gap: clamp(0.25rem, 1.5vw, 0.5rem); justify-content: center; margin-bottom: 0.75rem; max-width: 340px; margin-left: auto; margin-right: auto;">
             @for ($i = 0; $i < 6; $i++)
                 <input
                     type="text"
@@ -42,7 +42,7 @@
                     pattern="[0-9]"
                     class="code-digit"
                     autocomplete="off"
-                    style="width: 48px; height: 56px; text-align: center; font-size: 1.5rem; font-weight: 700; border: 2px solid var(--border-color); border-radius: var(--border-radius-md); background: var(--bg-primary); color: var(--text-primary); transition: border-color 0.2s;"
+                    style="flex: 1; min-width: 0; max-width: 48px; height: clamp(44px, 13vw, 56px); text-align: center; font-size: clamp(1.1rem, 5vw, 1.5rem); font-weight: 700; border: 2px solid var(--border-color); border-radius: var(--border-radius-md); background: var(--bg-primary); color: var(--text-primary); transition: border-color 0.2s;"
                 >
             @endfor
         </div>
@@ -123,9 +123,9 @@
             if (val && index < inputs.length - 1) {
                 inputs[index + 1].focus();
             }
-            // Auto-submit quand le 6e chiffre est saisi
+            // Quand le 6e chiffre est saisi : focus sur le bouton (pas d'auto-submit)
             if (index === 5 && val) {
-                setTimeout(function () { form.submit(); }, 120);
+                submitBtn.focus();
             }
         });
 
@@ -148,7 +148,7 @@
             var nextEmpty = Math.min(pasted.length, 5);
             inputs[nextEmpty].focus();
             if (pasted.length >= 6) {
-                setTimeout(function () { form.submit(); }, 120);
+                submitBtn.focus();
             }
         });
     });
