@@ -14,10 +14,10 @@
         .body p { line-height: 1.7; margin: 0 0 16px; color: #334155; font-size: 15px; }
         .credentials { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px 24px; margin: 24px 0; }
         .credentials h3 { margin: 0 0 14px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; }
-        .credential-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; }
+        .credential-row { display: block; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #e2e8f0; }
         .credential-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-        .credential-label { font-size: 13px; color: #64748b; }
-        .credential-value { font-size: 14px; font-weight: 600; color: #1e293b; font-family: monospace; background: #ffffff; padding: 4px 10px; border-radius: 4px; border: 1px solid #e2e8f0; }
+        .credential-label { display: block; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+        .credential-value { display: block; font-size: 15px; font-weight: 600; color: #1e293b; font-family: monospace; background: #ffffff; padding: 8px 12px; border-radius: 4px; border: 1px solid #e2e8f0; word-break: break-all; }
         .cta { text-align: center; margin: 28px 0; }
         .btn { display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600; font-size: 15px; }
         .warning { background: #fefce8; border: 1px solid #fde047; border-radius: 6px; padding: 14px 18px; margin: 20px 0; }
@@ -29,14 +29,14 @@
 <body>
     <div class="wrapper">
         <div class="header">
-            <h1>Téléphonie VOIP</h1>
+            <h1>HR Télécoms</h1>
             <p>Votre espace client est prêt</p>
         </div>
 
         <div class="body">
             <p>Bonjour <strong>{{ $user->name }}</strong>,</p>
 
-            <p>Votre compte a été créé sur la plateforme <strong>Téléphonie VOIP</strong>. Vous trouverez ci-dessous vos identifiants de connexion provisoires.</p>
+            <p>Votre compte a été créé sur la plateforme de <strong>HR Télécoms</strong>. Vous trouverez ci-dessous vos identifiants de connexion provisoires.</p>
 
             <div class="credentials">
                 <h3>Identifiants de connexion</h3>
@@ -64,7 +64,7 @@
         </div>
 
         <div class="footer">
-            <p>© {{ date('Y') }} Téléphonie VOIP — Ce message est confidentiel.</p>
+            <p>© {{ date('Y') }} HR Télécoms — Ce message est confidentiel.</p>
         </div>
     </div>
 </body>
