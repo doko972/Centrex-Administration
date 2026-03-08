@@ -17,15 +17,24 @@
         </div>
         <div>
             <h3 class="mb-xs">Bienvenue, {{ Auth::user()->name }}</h3>
-            <p class="text-secondary mb-0">Voici la liste de vos centrex et IPBX FreePBX. Cliquez sur un element pour y acceder.</p>
+            <p class="text-secondary mb-0">
+            @if ($centrex->count() > 0 && $ipbx->count() > 0)
+                Voici la liste de vos Centrex et IPBX FreePBX. Cliquez sur un élément pour y accéder.
+            @elseif ($centrex->count() > 0)
+                Voici la liste de vos Centrex. Cliquez sur un élément pour y accéder.
+            @elseif ($ipbx->count() > 0)
+                Voici la liste de vos IPBX FreePBX. Cliquez sur un élément pour y accéder.
+            @else
+                Aucun équipement n'est associé à votre compte pour le moment.
+            @endif
+        </p>
         </div>
     </div>
 </div>
 
 {{-- Section Centrex --}}
-<h2 style="margin-bottom: 1rem; font-size: 1.25rem;">Mes Centrex</h2>
-
 @if ($centrex->count() > 0)
+<h2 style="margin-bottom: 1rem; font-size: 1.25rem;">Mes Centrex</h2>
     <!-- Barre de recherche Centrex -->
     <div class="card mb-lg" style="padding: 1rem;">
         <div class="search-box">
@@ -92,26 +101,15 @@
     <div id="no-results-centrex" class="card" style="display: none;">
         <div class="empty-state">
             <div class="empty-icon">?</div>
-            <p class="empty-title">Aucun resultat</p>
-            <p class="empty-description">Aucun centrex ne correspond a votre recherche.</p>
-        </div>
-    </div>
-@else
-    <div class="card mb-xl">
-        <div class="empty-state">
-            <div class="empty-icon">C</div>
-            <p class="empty-title">Aucun centrex</p>
-            <p class="empty-description">
-                Aucun centrex n'est actuellement associe a votre compte.
-            </p>
+            <p class="empty-title">Aucun résultat</p>
+            <p class="empty-description">Aucun centrex ne correspond à votre recherche.</p>
         </div>
     </div>
 @endif
 
 {{-- Section IPBX --}}
-<h2 style="margin: 2rem 0 1rem 0; font-size: 1.25rem;">Mes IPBX</h2>
-
 @if ($ipbx->count() > 0)
+<h2 style="margin: 2rem 0 1rem 0; font-size: 1.25rem;">Mes IPBX</h2>
     <!-- Barre de recherche IPBX -->
     <div class="card mb-lg" style="padding: 1rem;">
         <div class="search-box">
@@ -177,18 +175,8 @@
     <div id="no-results-ipbx" class="card" style="display: none;">
         <div class="empty-state">
             <div class="empty-icon">?</div>
-            <p class="empty-title">Aucun resultat</p>
-            <p class="empty-description">Aucun IPBX ne correspond a votre recherche.</p>
-        </div>
-    </div>
-@else
-    <div class="card">
-        <div class="empty-state">
-            <div class="empty-icon">I</div>
-            <p class="empty-title">Aucun IPBX</p>
-            <p class="empty-description">
-                Aucun IPBX n'est actuellement associe a votre compte.
-            </p>
+            <p class="empty-title">Aucun résultat</p>
+            <p class="empty-description">Aucun IPBX ne correspond à votre recherche.</p>
         </div>
     </div>
 @endif
