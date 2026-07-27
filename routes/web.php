@@ -23,6 +23,7 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\AuditLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -94,6 +95,9 @@ Route::middleware(['auth', 'two_factor', 'must.change.password'])->group(functio
 
 Route::middleware(['auth', 'two_factor', 'must.change.password', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
+
+    // Journal d'audit
+    Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
 
     // Routes CRUD Clients
     Route::resource('clients', ClientController::class);

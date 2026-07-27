@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Client;
 use App\Models\Centrex;
 use Illuminate\Http\Request;
@@ -30,8 +31,26 @@ class ClientCentrexController extends Controller
             'centrex.*' => 'exists:centrex,id',
         ]);
 
+        $before = $client->centrex->pluck('id')->toArray();
+
         // Synchroniser les centrex (ajoute les nouveaux, retire les anciens)
         $client->centrex()->sync($validated['centrex'] ?? []);
+
+        $after = $validated['centrex'] ?? [];
+        $added = Centrex::whereIn('id', array_diff($after, $before))->pluck('name')->all();
+        $removed = Centrex::whereIn('id', array_diff($before, $after))->pluck('name')->all();
+
+        if ($added || $removed) {
+            $parts = [];
+            if ($added) $parts[] = 'ajouté(s) : ' . implode(', ', $added);
+            if ($removed) $parts[] = 'retiré(s) : ' . implode(', ', $removed);
+
+            AuditLog::record(
+                'client.centrex_associations_updated',
+                "Centrex associés à {$client->company_name} mis à jour — " . implode(' / ', $parts),
+                $client
+            );
+        }
 
         return redirect()->route('admin.clients.show', $client)
             ->with('success', 'Les centrex ont été associés avec succès !');

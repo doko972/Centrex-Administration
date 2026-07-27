@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Centrex;
 use App\Models\Client;
 use Illuminate\Http\Request;
@@ -48,7 +49,13 @@ class CentrexController extends Controller
             $validated['image'] = $imagePath;
         }
 
-        Centrex::create($validated);
+        $centrex = Centrex::create($validated);
+
+        AuditLog::record(
+            'centrex.created',
+            "Centrex créé : {$centrex->name} ({$centrex->ip_address})",
+            $centrex
+        );
 
         return redirect()->route('admin.centrex.index')
             ->with('success', 'Centrex créé avec succès !');
@@ -106,6 +113,12 @@ class CentrexController extends Controller
 
         $centrex->update($validated);
 
+        AuditLog::record(
+            'centrex.updated',
+            "Centrex modifié : {$centrex->name} ({$centrex->ip_address})",
+            $centrex
+        );
+
         return redirect()->route('admin.centrex.index')
             ->with('success', 'Centrex mis à jour avec succès !');
     }
@@ -142,13 +155,19 @@ class CentrexController extends Controller
      */
     public function destroy(Centrex $centrex)
     {
+        AuditLog::record(
+            'centrex.deleted',
+            "Centrex supprimé : {$centrex->name} ({$centrex->ip_address})",
+            $centrex
+        );
+
         // Supprimer l'image si elle existe
         if ($centrex->image) {
             Storage::disk('public')->delete($centrex->image);
         }
 
         $centrex->delete();
-        
+
         return redirect()->route('admin.centrex.index')
             ->with('success', 'Centrex supprimé avec succès !');
     }

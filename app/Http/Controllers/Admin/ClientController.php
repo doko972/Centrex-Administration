@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Client;
 use App\Models\User;
 use App\Models\ConnectionType;
@@ -162,6 +163,13 @@ class ClientController extends Controller
             }
         }
 
+        $client = Client::where('email', $validated['email'])->first();
+        AuditLog::record(
+            'client.created',
+            "Client créé : {$validated['company_name']} ({$validated['email']})",
+            $client
+        );
+
         return redirect()->route('admin.clients.index')
             ->with('success', 'Client créé avec succès ! Un email de bienvenue lui a été envoyé.');
     }
@@ -288,6 +296,12 @@ class ClientController extends Controller
             }
         });
 
+        AuditLog::record(
+            'client.updated',
+            "Client modifié : {$client->company_name} ({$client->email})",
+            $client
+        );
+
         if ($request->filled('password')) {
             $client->user->refresh();
             try {
@@ -297,6 +311,11 @@ class ClientController extends Controller
             } catch (\Exception $e) {
                 // L'email échoue silencieusement pour ne pas bloquer la mise à jour
             }
+            AuditLog::record(
+                'client.password_changed',
+                "Mot de passe modifié par un administrateur pour : {$client->company_name} ({$client->email})",
+                $client
+            );
         }
 
         return redirect()->route('admin.clients.index')
@@ -308,6 +327,12 @@ class ClientController extends Controller
      */
     public function destroy(Client $client)
     {
+        AuditLog::record(
+            'client.deleted',
+            "Client supprimé : {$client->company_name} ({$client->email})",
+            $client
+        );
+
         $client->user->delete(); // Supprime aussi le client grâce à la cascade
 
         return redirect()->route('admin.clients.index')

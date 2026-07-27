@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Ipbx;
 use Illuminate\Http\Request;
 
@@ -39,7 +40,13 @@ class IpbxController extends Controller
             unset($validated['password']);
         }
 
-        Ipbx::create($validated);
+        $ipbx = Ipbx::create($validated);
+
+        AuditLog::record(
+            'ipbx.created',
+            "IPBX créé : {$ipbx->client_name} ({$ipbx->ip_address})",
+            $ipbx
+        );
 
         return redirect()->route('admin.ipbx.index')
             ->with('success', 'IPBX ajoute avec succes.');
@@ -82,12 +89,24 @@ class IpbxController extends Controller
 
         $ipbx->update($validated);
 
+        AuditLog::record(
+            'ipbx.updated',
+            "IPBX modifié : {$ipbx->client_name} ({$ipbx->ip_address})",
+            $ipbx
+        );
+
         return redirect()->route('admin.ipbx.index')
             ->with('success', 'IPBX mis a jour avec succes.');
     }
 
     public function destroy(Ipbx $ipbx)
     {
+        AuditLog::record(
+            'ipbx.deleted',
+            "IPBX supprimé : {$ipbx->client_name} ({$ipbx->ip_address})",
+            $ipbx
+        );
+
         $ipbx->delete();
 
         return redirect()->route('admin.ipbx.index')
