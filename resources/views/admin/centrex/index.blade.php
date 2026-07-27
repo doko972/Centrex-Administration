@@ -50,6 +50,7 @@
                     </div>
 
                     <div class="centrex-card__body">
+                        <h3 class="centrex-card__name">{{ $item->name }}</h3>
                         <p class="centrex-card__address">
                             {{ $item->ip_address }}:{{ $item->port }}
                         </p>
