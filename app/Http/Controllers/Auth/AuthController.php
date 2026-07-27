@@ -40,19 +40,19 @@ class AuthController extends Controller
                 'timestamp' => now(),
             ]);
 
-            // Vérifier si l'appareil est de confiance → passer le 2FA
-            if (TwoFactorController::hasTrustedDevice($request, $user)) {
-                session(['two_factor_verified' => true]);
+            // 2FA désactivé temporairement — pour réactiver, restaurer le bloc ci-dessous
+            // et retirer les 3 lignes de redirection directe.
+            // if (TwoFactorController::hasTrustedDevice($request, $user)) {
+            //     session(['two_factor_verified' => true]);
+            //     ...
+            // }
+            // TwoFactorController::generateAndSendCode($user);
+            // return redirect()->route('two-factor.verify');
+            session(['two_factor_verified' => true]);
 
-                if ($user->isAdmin()) return redirect()->intended('/admin/dashboard');
-                if ($user->isSuperClient()) return redirect()->intended('/superclient/dashboard');
-                return redirect()->intended('/client/dashboard');
-            }
-
-            // Générer et envoyer le code 2FA
-            TwoFactorController::generateAndSendCode($user);
-
-            return redirect()->route('two-factor.verify');
+            if ($user->isAdmin()) return redirect()->intended('/admin/dashboard');
+            if ($user->isSuperClient()) return redirect()->intended('/superclient/dashboard');
+            return redirect()->intended('/client/dashboard');
         }
 
         // Logger la tentative de connexion échouée

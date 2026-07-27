@@ -12,13 +12,14 @@ class EnsureTwoFactorVerified
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && !session('two_factor_verified')) {
-            if (TwoFactorController::hasTrustedDevice($request, Auth::user())) {
-                session(['two_factor_verified' => true]);
-            } elseif (!$request->routeIs('two-factor.*') && !$request->routeIs('logout')) {
-                return redirect()->route('two-factor.verify');
-            }
-        }
+        // 2FA désactivé temporairement — pour réactiver, restaurer le bloc ci-dessous.
+        // if (Auth::check() && !session('two_factor_verified')) {
+        //     if (TwoFactorController::hasTrustedDevice($request, Auth::user())) {
+        //         session(['two_factor_verified' => true]);
+        //     } elseif (!$request->routeIs('two-factor.*') && !$request->routeIs('logout')) {
+        //         return redirect()->route('two-factor.verify');
+        //     }
+        // }
 
         return $next($request);
     }
