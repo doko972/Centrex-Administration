@@ -25,7 +25,7 @@
         <nav class="navbar">
             <div class="navbar-container">
                 <!-- Logo -->
-                <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->isSuperClient() ? route('superclient.dashboard') : route('client.dashboard')) }}" class="navbar-brand">
+                <a href="{{ Auth::check() ? (Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->isSuperClient() ? route('superclient.dashboard') : route('client.dashboard'))) : url('/') }}" class="navbar-brand">
                     <span class="logo-light">
                         <dotlottie-player id="logo-animation" src="{{ asset('logo.json') }}" background="transparent" speed="1" style="width: 36px; height: 36px;" autoplay></dotlottie-player>
                     </span>
@@ -37,6 +37,7 @@
 
                 <!-- Desktop Navigation -->
                 <div class="navbar-nav">
+                    @auth
                     @if(Auth::user()->isAdmin())
                         <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                             <span class="nav-icon">
@@ -99,6 +100,7 @@
                             Mon Espace
                         </a>
                     @endif
+                    @endauth
                 </div>
 
                 <!-- Desktop Actions -->
@@ -112,6 +114,7 @@
                         </span>
                     </button>
 
+                    @auth
                     <div class="user-menu" id="user-menu">
                         <button class="user-trigger" onclick="toggleUserMenu()">
                             <div class="user-avatar">
@@ -145,6 +148,9 @@
                             </form>
                         </div>
                     </div>
+                    @else
+                    <a href="{{ route('login') }}" class="btn btn-primary btn-sm">Se connecter</a>
+                    @endauth
                 </div>
 
                 <!-- Mobile Menu Toggle -->
@@ -164,7 +170,7 @@
         <!-- Mobile Navigation Panel -->
         <div class="mobile-nav" id="mobile-nav">
             <div class="mobile-nav-header">
-                <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->isSuperClient() ? route('superclient.dashboard') : route('client.dashboard')) }}" class="navbar-brand" onclick="closeMobileMenu()">
+                <a href="{{ Auth::check() ? (Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->isSuperClient() ? route('superclient.dashboard') : route('client.dashboard'))) : url('/') }}" class="navbar-brand" onclick="closeMobileMenu()">
                     <span class="logo-light">
                         <dotlottie-player src="{{ asset('logo.json') }}" background="transparent" speed="1" style="width: 32px; height: 32px;"></dotlottie-player>
                     </span>
@@ -182,6 +188,7 @@
                 <div class="mobile-nav-section">
                     <div class="mobile-nav-section-title">Navigation</div>
 
+                    @auth
                     @if(Auth::user()->isAdmin())
                         <a href="{{ route('admin.dashboard') }}" class="mobile-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" onclick="closeMobileMenu()">
                             <span class="mobile-nav-icon">
@@ -244,10 +251,12 @@
                             Mon Espace
                         </a>
                     @endif
+                    @endauth
                 </div>
             </div>
 
             <div class="mobile-nav-footer">
+                @auth
                 <div class="mobile-user-info">
                     <div class="mobile-user-avatar">
                         {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
@@ -286,12 +295,62 @@
                         </button>
                     </form>
                 </div>
+                @else
+                <div class="mobile-nav-actions">
+                    <button type="button" id="mobile-theme-toggle" class="mobile-action-btn">
+                        <span class="mobile-theme-icon-light">
+                            <dotlottie-player src="{{ asset('icons/icon-sun.json') }}" background="transparent" speed="1" style="width: 20px; height: 20px;"></dotlottie-player>
+                        </span>
+                        <span class="mobile-theme-icon-dark" style="display: none;">
+                            <dotlottie-player src="{{ asset('icons/icon-moon.json') }}" background="transparent" speed="1" style="width: 20px; height: 20px;"></dotlottie-player>
+                        </span>
+                        <span class="mobile-theme-text">Theme</span>
+                    </button>
+                    <a href="{{ route('login') }}" class="mobile-action-btn" style="flex: 1;" onclick="closeMobileMenu()">Se connecter</a>
+                </div>
+                @endauth
             </div>
         </div>
 
         <!-- Main Content -->
         <main>
             <div class="container">
+                @if(session('success'))
+                    <div class="alert alert-success mb-lg">
+                        <span class="alert-icon">✓</span>
+                        <div class="alert-content">
+                            <p class="alert-message mb-0">{{ session('success') }}</p>
+                        </div>
+                    </div>
+                @endif
+
+                @if(session('error'))
+                    <div class="alert alert-danger mb-lg">
+                        <span class="alert-icon">!</span>
+                        <div class="alert-content">
+                            <p class="alert-message mb-0">{{ session('error') }}</p>
+                        </div>
+                    </div>
+                @endif
+
+                @if(session('warning'))
+                    <div class="alert alert-warning mb-lg">
+                        <span class="alert-icon">⚠</span>
+                        <div class="alert-content">
+                            <p class="alert-message mb-0">{{ session('warning') }}</p>
+                        </div>
+                    </div>
+                @endif
+
+                @if(session('status'))
+                    <div class="alert alert-success mb-lg">
+                        <span class="alert-icon">✓</span>
+                        <div class="alert-content">
+                            <p class="alert-message mb-0">{{ session('status') }}</p>
+                        </div>
+                    </div>
+                @endif
+
                 @yield('content')
             </div>
         </main>

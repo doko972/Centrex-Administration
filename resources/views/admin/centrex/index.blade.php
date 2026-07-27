@@ -16,15 +16,6 @@
     </div>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success mb-lg">
-        <span class="alert-icon">✓</span>
-        <div class="alert-content">
-            <p class="alert-message">{{ session('success') }}</p>
-        </div>
-    </div>
-@endif
-
 @if($centrex->count() > 0)
     <!-- Barre de recherche -->
     <div class="card mb-lg" style="padding: 1rem;">

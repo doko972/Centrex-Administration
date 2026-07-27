@@ -83,6 +83,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Appareils mémorisés (2FA)
+     */
+    public function trustedDevices()
+    {
+        return $this->hasMany(TrustedDevice::class);
+    }
+
+    /**
      * Envoyer l'email de réinitialisation de mot de passe (branding maison, au lieu de la notification par défaut)
      */
     public function sendPasswordResetNotification($token): void

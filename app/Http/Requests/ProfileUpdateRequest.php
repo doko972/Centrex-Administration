@@ -20,6 +20,8 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        $emailChanging = strtolower((string) $this->input('email')) !== strtolower($this->user()->email);
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
@@ -30,6 +32,9 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            // On exige le mot de passe actuel uniquement quand l'email change réellement,
+            // pour éviter qu'une session volée puisse détourner le compte via un email modifié.
+            'current_password' => $emailChanging ? ['required', 'current_password'] : ['nullable'],
         ];
     }
 
@@ -45,6 +50,8 @@ class ProfileUpdateRequest extends FormRequest
             'email.required' => "L'email est obligatoire.",
             'email.email' => 'Veuillez saisir une adresse email valide.',
             'email.unique' => 'Cette adresse email est déjà utilisée par un autre compte.',
+            'current_password.required' => 'Votre mot de passe actuel est requis pour changer votre adresse email.',
+            'current_password.current_password' => 'Le mot de passe actuel est incorrect.',
         ];
     }
 }

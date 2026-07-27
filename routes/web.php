@@ -82,6 +82,8 @@ Route::middleware(['auth', 'two_factor', 'must.change.password'])->group(functio
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'updateInfo'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::delete('/profile/devices', [ProfileController::class, 'destroyAllTrustedDevices'])->name('profile.devices.destroy-all');
+    Route::delete('/profile/devices/{device}', [ProfileController::class, 'destroyTrustedDevice'])->name('profile.devices.destroy');
 });
 
 /*

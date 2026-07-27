@@ -12,12 +12,6 @@
         <strong>IP :</strong> {{ $centrex->ip_address }}:{{ $centrex->port }}
     </div>
 
-    @if(session('success'))
-        <div style="background-color: var(--color-success); color: white; padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem;">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <form method="POST" action="{{ route('admin.centrex.update-clients', $centrex) }}">
         @csrf
 

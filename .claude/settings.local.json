@@ -6,7 +6,14 @@
       "Bash(php artisan config:clear:*)",
       "Bash(php artisan:*)",
       "Bash(php artisan view:clear:*)",
-      "Bash(php artisan *)"
+      "Bash(php artisan *)",
+      "Bash(composer show *)",
+      "Bash(timeout 8 composer show -a pragmarx/google2fa)",
+      "Bash(xargs -I{} wc -l {})",
+      "Bash(pkill -f \"artisan serve\")",
+      "Bash(curl -s -o /tmp/out3.html -w \"HTTP:%{http_code}\\\\n\" http://127.0.0.1:8123/login)",
+      "Read(//tmp/**)",
+      "Bash(php -l app/Http/Controllers/Admin/ClientController.php)"
     ]
   }
 }

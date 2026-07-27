@@ -5,15 +5,6 @@
     <h1 class="page-title">Mon profil</h1>
 </div>
 
-@if (session('success'))
-    <div class="alert alert-success mb-lg">
-        <span class="alert-icon">✓</span>
-        <div class="alert-content">
-            <p class="alert-message mb-0">{{ session('success') }}</p>
-        </div>
-    </div>
-@endif
-
 <div class="card" style="max-width: 640px;">
     <div class="section">
         <h3 class="section-title mb-lg" style="padding-bottom: 0.75rem; border-bottom: 2px solid var(--border-color);">
@@ -57,6 +48,19 @@
                     required
                     class="form-input"
                 >
+            </div>
+
+            <div class="form-group">
+                <label for="current_password_info" class="form-label">Mot de passe actuel</label>
+                <input
+                    type="password"
+                    id="current_password_info"
+                    name="current_password"
+                    autocomplete="current-password"
+                    class="form-input"
+                    placeholder="Requis uniquement si vous changez d'email"
+                >
+                <p class="form-help">Par sécurité, votre mot de passe actuel est demandé uniquement si vous modifiez votre adresse email.</p>
             </div>
 
             <div class="form-actions">
@@ -160,6 +164,46 @@
                 <button type="submit" class="btn btn-primary">Changer le mot de passe</button>
             </div>
         </form>
+    </div>
+</div>
+
+<div class="card" style="max-width: 640px;">
+    <div class="section">
+        <h3 class="section-title mb-lg" style="padding-bottom: 0.75rem; border-bottom: 2px solid var(--border-color);">
+            Appareils de confiance
+        </h3>
+
+        <p class="form-help mb-lg">Ces appareils n'ont pas besoin de code de vérification pendant 30 jours après votre connexion.</p>
+
+        @if ($trustedDevices->isEmpty())
+            <p class="text-secondary">Aucun appareil de confiance actif.</p>
+        @else
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                @foreach ($trustedDevices as $device)
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: var(--border-radius);">
+                        <div>
+                            <div style="font-weight: 500;">{{ $device->label() }}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                Ajouté le {{ $device->created_at?->format('d/m/Y') }} · Expire le {{ $device->expires_at->format('d/m/Y') }}
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ route('profile.devices.destroy', $device) }}" onsubmit="return confirm('Révoquer cet appareil ?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-ghost btn-sm">Révoquer</button>
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="form-actions">
+                <form method="POST" action="{{ route('profile.devices.destroy-all') }}" onsubmit="return confirm('Révoquer tous les appareils de confiance ?');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-ghost">Révoquer tous les appareils</button>
+                </form>
+            </div>
+        @endif
     </div>
 </div>
 @endsection

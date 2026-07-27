@@ -92,6 +92,7 @@ class TwoFactorController extends Controller
             TrustedDevice::create([
                 'user_id'    => $user->id,
                 'token'      => Hash::make($token),
+                'user_agent' => substr((string) $request->userAgent(), 0, 255),
                 'expires_at' => now()->addDays(30),
             ]);
             $cookieValue = Crypt::encryptString($user->id . '|' . $token);

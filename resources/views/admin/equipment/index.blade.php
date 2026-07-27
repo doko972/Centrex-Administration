@@ -13,15 +13,6 @@
     </div>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success mb-lg">
-        <span class="alert-icon">✓</span>
-        <div class="alert-content">
-            {{ session('success') }}
-        </div>
-    </div>
-@endif
-
 <div class="card">
     <div class="table-wrapper">
         <table class="table">

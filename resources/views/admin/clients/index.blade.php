@@ -4,7 +4,7 @@
 <div class="page-header">
     <h1 class="page-title">
         Gestion des Clients
-        <small>{{ $clients->count() }} client(s) enregistré(s)</small>
+        <small>{{ $clients->total() }} client(s) enregistré(s)</small>
     </h1>
     <div class="page-actions">
         <a href="{{ route('admin.dashboard') }}" class="btn btn-ghost">
@@ -16,35 +16,36 @@
     </div>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success mb-lg">
-        <span class="alert-icon">✓</span>
-        <div class="alert-content">
-            <p class="alert-message">{{ session('success') }}</p>
-        </div>
-    </div>
-@endif
-
-@if($clients->count() > 0)
+@if($clients->total() > 0 || $search !== '')
     <!-- Barre de recherche -->
     <div class="card mb-lg" style="padding: 1rem;">
-        <input
-            type="text"
-            id="client-search"
-            class="form-control"
-            placeholder="Rechercher un client (nom, entreprise, email, téléphone)..."
-            style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem;"
-        >
+        <form method="GET" action="{{ route('admin.clients.index') }}">
+            <input
+                type="text"
+                name="search"
+                value="{{ $search }}"
+                class="form-control"
+                placeholder="Rechercher un client (nom, entreprise, email, téléphone)..."
+                style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem;"
+                onchange="this.form.submit()"
+            >
+        </form>
     </div>
 
+    @if($clients->isEmpty())
+        <div class="card">
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <p class="empty-title">Aucun résultat</p>
+                <p class="empty-description">Aucun client ne correspond à votre recherche « {{ $search }} ».</p>
+                <a href="{{ route('admin.clients.index') }}" class="btn btn-ghost">Réinitialiser la recherche</a>
+            </div>
+        </div>
+    @else
     <!-- Liste des clients -->
     <div id="clients-list">
         @foreach($clients as $client)
-            <div class="card mb-md client-list-item client-card"
-                 data-name="{{ strtolower($client->user->name) }}"
-                 data-company="{{ strtolower($client->company_name) }}"
-                 data-email="{{ strtolower($client->email) }}"
-                 data-phone="{{ strtolower($client->phone ?? '') }}">
+            <div class="card mb-md client-card">
                 <div class="client-card-header">
                     <div class="avatar avatar-lg">
                         {{ strtoupper(substr($client->user->name, 0, 1)) }}
@@ -92,35 +93,8 @@
         @endforeach
     </div>
 
-    <!-- Message si aucun résultat -->
-    <div id="no-results" class="card" style="display: none;">
-        <div class="empty-state">
-            <div class="empty-icon">🔍</div>
-            <p class="empty-title">Aucun résultat</p>
-            <p class="empty-description">Aucun client ne correspond à votre recherche.</p>
-        </div>
-    </div>
-
-    <script>
-        document.getElementById('client-search').addEventListener('input', function() {
-            const query = this.value.toLowerCase().trim();
-            const items = document.querySelectorAll('.client-list-item');
-            let visibleCount = 0;
-
-            items.forEach(function(item) {
-                const name = item.dataset.name || '';
-                const company = item.dataset.company || '';
-                const email = item.dataset.email || '';
-                const phone = item.dataset.phone || '';
-                const matches = name.includes(query) || company.includes(query) || email.includes(query) || phone.includes(query);
-
-                item.style.display = matches ? '' : 'none';
-                if (matches) visibleCount++;
-            });
-
-            document.getElementById('no-results').style.display = visibleCount === 0 ? '' : 'none';
-        });
-    </script>
+    {{ $clients->links('pagination.custom') }}
+    @endif
 @else
     <div class="card">
         <div class="empty-state">

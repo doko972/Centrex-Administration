@@ -9,6 +9,7 @@ use App\Models\ConnectionType;
 use App\Models\Provider;
 use App\Models\Equipment;
 use App\Mail\WelcomeNewUser;
+use App\Mail\PasswordChangedMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -19,10 +20,26 @@ class ClientController extends Controller
     /**
      * Afficher la liste des clients
      */
-    public function index()
+    public function index(Request $request)
     {
-        $clients = Client::with('user')->orderBy('company_name', 'asc')->get();
-        return view('admin.clients.index', compact('clients'));
+        $search = trim((string) $request->query('search', ''));
+
+        $clients = Client::with('user')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('company_name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($userQuery) use ($search) {
+                            $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->orderBy('company_name', 'asc')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.clients.index', compact('clients', 'search'));
     }
 
     /**
@@ -270,6 +287,17 @@ class ClientController extends Controller
                 }
             }
         });
+
+        if ($request->filled('password')) {
+            $client->user->refresh();
+            try {
+                Mail::to($client->user->email)->send(
+                    new PasswordChangedMail($client->user, 'par un administrateur')
+                );
+            } catch (\Exception $e) {
+                // L'email échoue silencieusement pour ne pas bloquer la mise à jour
+            }
+        }
 
         return redirect()->route('admin.clients.index')
             ->with('success', 'Client mis à jour avec succès !');

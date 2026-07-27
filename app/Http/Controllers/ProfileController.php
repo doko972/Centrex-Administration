@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Mail\EmailChangedMail;
+use App\Mail\PasswordChangedMail;
+use App\Models\TrustedDevice;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
@@ -19,6 +23,10 @@ class ProfileController extends Controller
     {
         return view('profile.edit', [
             'user' => $request->user(),
+            'trustedDevices' => $request->user()->trustedDevices()
+                ->where('expires_at', '>', now())
+                ->orderByDesc('created_at')
+                ->get(),
         ]);
     }
 
@@ -27,7 +35,18 @@ class ProfileController extends Controller
      */
     public function updateInfo(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->update($request->validated());
+        $user = $request->user();
+        $oldEmail = $user->email;
+        $newEmail = $request->validated()['email'];
+
+        $user->update([
+            'name' => $request->validated()['name'],
+            'email' => $newEmail,
+        ]);
+
+        if ($newEmail !== $oldEmail) {
+            Mail::to($oldEmail)->send(new EmailChangedMail($user, $oldEmail, $newEmail));
+        }
 
         return back()->with('success', 'Vos informations ont été mises à jour.');
     }
@@ -69,6 +88,30 @@ class ProfileController extends Controller
 
         $request->session()->regenerate();
 
+        Mail::to($user->email)->send(new PasswordChangedMail($user, 'par vous-même depuis votre profil'));
+
         return back()->with('success', 'Mot de passe mis à jour avec succès.');
+    }
+
+    /**
+     * Révoquer un appareil de confiance
+     */
+    public function destroyTrustedDevice(Request $request, TrustedDevice $device): RedirectResponse
+    {
+        abort_unless($device->user_id === $request->user()->id, 403);
+
+        $device->delete();
+
+        return back()->with('success', 'Appareil retiré de la liste des appareils de confiance.');
+    }
+
+    /**
+     * Révoquer tous les appareils de confiance
+     */
+    public function destroyAllTrustedDevices(Request $request): RedirectResponse
+    {
+        $request->user()->trustedDevices()->delete();
+
+        return back()->with('success', 'Tous les appareils de confiance ont été révoqués.');
     }
 }
