@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
+    <x-breadcrumbs :items="[
+        ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+        ['label' => 'Centrex', 'url' => route('admin.centrex.index')],
+        ['label' => $centrex->name],
+    ]" />
     <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
         <h1>Détails du Centrex</h1>
         <div style="display: flex; gap: 0.5rem;">

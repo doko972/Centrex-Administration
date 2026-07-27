@@ -20,6 +20,39 @@ class IpbxController extends Controller
         return view('admin.ipbx.create');
     }
 
+    /**
+     * Exporter la liste des IPBX au format CSV
+     */
+    public function export()
+    {
+        $ipbxs = Ipbx::orderBy('client_name')->get();
+        $filename = 'ipbx-' . now()->format('Y-m-d_H-i') . '.csv';
+
+        return response()->streamDownload(function () use ($ipbxs) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['Client', 'Contact', 'Email', 'Téléphone', 'Adresse IP', 'Port', 'Statut', 'Actif', 'Dernier ping'], ';');
+
+            foreach ($ipbxs as $ipbx) {
+                fputcsv($handle, [
+                    $ipbx->client_name,
+                    $ipbx->contact_name,
+                    $ipbx->email,
+                    $ipbx->phone,
+                    $ipbx->ip_address,
+                    $ipbx->port,
+                    $ipbx->status,
+                    $ipbx->is_active ? 'Oui' : 'Non',
+                    $ipbx->last_ping?->format('d/m/Y H:i') ?? '-',
+                ], ';');
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -115,24 +148,7 @@ class IpbxController extends Controller
 
     public function ping(Ipbx $ipbx)
     {
-        $status = 'offline';
-        $ip = $ipbx->ip_address;
-
-        // Ping ICMP (Windows: -n 1 -w 3000, Linux: -c 1 -W 3)
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            exec("ping -n 1 -w 3000 " . escapeshellarg($ip), $output, $result);
-        } else {
-            exec("ping -c 1 -W 3 " . escapeshellarg($ip), $output, $result);
-        }
-
-        if ($result === 0) {
-            $status = 'online';
-        }
-
-        $ipbx->update([
-            'status' => $status,
-            'last_ping' => now(),
-        ]);
+        $status = $ipbx->checkAndUpdateStatus();
 
         return response()->json([
             'status' => $status,

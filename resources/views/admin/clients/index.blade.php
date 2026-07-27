@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+<x-breadcrumbs :items="[
+    ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+    ['label' => 'Clients'],
+]" />
 <div class="page-header">
     <h1 class="page-title">
         Gestion des Clients
@@ -9,6 +13,9 @@
     <div class="page-actions">
         <a href="{{ route('admin.dashboard') }}" class="btn btn-ghost">
             ← Retour
+        </a>
+        <a href="{{ route('admin.clients.export', ['search' => $search]) }}" class="btn btn-outline">
+            ⬇ Exporter CSV
         </a>
         <a href="{{ route('admin.clients.create') }}" class="btn btn-primary">
             + Nouveau Client

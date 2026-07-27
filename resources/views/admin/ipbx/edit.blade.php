@@ -1,6 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
+<x-breadcrumbs :items="[
+    ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+    ['label' => 'IPBX', 'url' => route('admin.ipbx.index')],
+    ['label' => $ipbx->client_name, 'url' => route('admin.ipbx.show', $ipbx)],
+    ['label' => 'Modifier'],
+]" />
 <div class="page-header">
     <h1 class="page-title">Modifier l'IPBX</h1>
     <div class="page-actions">

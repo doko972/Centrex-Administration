@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+<x-breadcrumbs :items="[
+    ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+    ['label' => 'IPBX'],
+]" />
 <div class="page-header">
     <h1 class="page-title">
         Gestion des IPBX
@@ -13,6 +17,9 @@
         <button type="button" id="ping-all-btn" class="btn btn-secondary" {{ $ipbxs->count() === 0 ? 'disabled' : '' }}>
             Ping All
         </button>
+        <a href="{{ route('admin.ipbx.export') }}" class="btn btn-outline">
+            ⬇ Exporter CSV
+        </a>
         <a href="{{ route('admin.ipbx.create') }}" class="btn btn-primary">
             + Nouvel IPBX
         </a>

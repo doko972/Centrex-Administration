@@ -1,6 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
+<x-breadcrumbs :items="[
+    ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+    ['label' => 'Clients', 'url' => route('admin.clients.index')],
+    ['label' => $client->company_name, 'url' => route('admin.clients.show', $client)],
+    ['label' => 'Gérer les IPBX'],
+]" />
 <div style="margin-bottom: 2rem;">
     <h1>Gerer les IPBX de {{ $client->company_name }}</h1>
 </div>

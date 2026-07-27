@@ -2,6 +2,11 @@
 @extends('layouts.app')
 
 @section('content')
+<x-breadcrumbs :items="[
+    ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+    ['label' => 'Centrex', 'url' => route('admin.centrex.index')],
+    ['label' => 'Nouveau'],
+]" />
 <div style="margin-bottom: 2rem;">
     <h1>Nouveau Centrex</h1>
 </div>

@@ -10,6 +10,40 @@
     </div>
 </div>
 
+<div class="grid grid-4 mb-xl">
+    <div class="stats-card">
+        <div class="stats-icon">
+            📡
+        </div>
+        <div class="stats-value">{{ $stats['total_equipment'] }}</div>
+        <div class="stats-label">Équipements</div>
+    </div>
+
+    <div class="stats-card stats-success">
+        <div class="stats-icon icon-success">
+            ✓
+        </div>
+        <div class="stats-value">{{ $stats['total_online'] }}</div>
+        <div class="stats-label">En ligne</div>
+    </div>
+
+    <div class="stats-card stats-danger">
+        <div class="stats-icon icon-danger">
+            !
+        </div>
+        <div class="stats-value">{{ $stats['total_offline'] }}</div>
+        <div class="stats-label">Hors ligne</div>
+    </div>
+
+    <div class="stats-card stats-info">
+        <div class="stats-icon icon-info">
+            📊
+        </div>
+        <div class="stats-value">{{ $stats['uptime_percentage'] }}%</div>
+        <div class="stats-label">Disponibilité</div>
+    </div>
+</div>
+
 <div class="card mb-xl">
     <div class="d-flex items-center gap-lg">
         <div class="avatar avatar-lg">

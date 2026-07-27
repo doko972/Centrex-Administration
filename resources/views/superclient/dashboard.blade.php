@@ -10,6 +10,40 @@
     </div>
 </div>
 
+<div class="grid grid-4 mb-xl">
+    <div class="stats-card">
+        <div class="stats-icon">
+            👥
+        </div>
+        <div class="stats-value">{{ $stats['total_clients'] }}</div>
+        <div class="stats-label">Clients actifs</div>
+    </div>
+
+    <div class="stats-card stats-secondary">
+        <div class="stats-icon icon-secondary">
+            📞
+        </div>
+        <div class="stats-value">{{ $stats['total_centrex'] }}</div>
+        <div class="stats-label">Centrex actifs</div>
+    </div>
+
+    <div class="stats-card stats-secondary">
+        <div class="stats-icon icon-secondary">
+            🖥️
+        </div>
+        <div class="stats-value">{{ $stats['total_ipbx'] }}</div>
+        <div class="stats-label">IPBX actifs</div>
+    </div>
+
+    <div class="stats-card stats-info">
+        <div class="stats-icon icon-info">
+            📊
+        </div>
+        <div class="stats-value">{{ $stats['uptime_percentage'] }}%</div>
+        <div class="stats-label">Disponibilité globale</div>
+    </div>
+</div>
+
 <div class="card mb-xl">
     <div class="d-flex items-center gap-lg">
         <div class="avatar avatar-lg">

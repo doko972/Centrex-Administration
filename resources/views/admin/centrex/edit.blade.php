@@ -1,6 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
+<x-breadcrumbs :items="[
+    ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+    ['label' => 'Centrex', 'url' => route('admin.centrex.index')],
+    ['label' => $centrex->name, 'url' => route('admin.centrex.show', $centrex)],
+    ['label' => 'Modifier'],
+]" />
 <div style="margin-bottom: 2rem;">
     <h1>Modifier le Centrex</h1>
 </div>

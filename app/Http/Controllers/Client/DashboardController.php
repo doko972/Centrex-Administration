@@ -34,6 +34,16 @@ class DashboardController extends Controller
             ->orderBy('client_name', 'asc')
             ->get();
 
-        return view('client.dashboard', compact('client', 'centrex', 'ipbx'));
+        $totalEquipment = $centrex->count() + $ipbx->count();
+        $totalOnline = $centrex->where('status', 'online')->count() + $ipbx->where('status', 'online')->count();
+
+        $stats = [
+            'total_equipment' => $totalEquipment,
+            'total_online' => $totalOnline,
+            'total_offline' => $totalEquipment - $totalOnline,
+            'uptime_percentage' => $totalEquipment > 0 ? round(($totalOnline / $totalEquipment) * 100, 1) : 0,
+        ];
+
+        return view('client.dashboard', compact('client', 'centrex', 'ipbx', 'stats'));
     }
 }

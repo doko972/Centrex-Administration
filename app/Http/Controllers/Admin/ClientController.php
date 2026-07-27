@@ -25,7 +25,55 @@ class ClientController extends Controller
     {
         $search = trim((string) $request->query('search', ''));
 
-        $clients = Client::with('user')
+        $clients = $this->searchQuery($search)
+            ->orderBy('company_name', 'asc')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.clients.index', compact('clients', 'search'));
+    }
+
+    /**
+     * Exporter la liste des clients (respecte le filtre de recherche courant) au format CSV
+     */
+    public function export(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+
+        $clients = $this->searchQuery($search)->orderBy('company_name', 'asc')->get();
+
+        $filename = 'clients-' . now()->format('Y-m-d_H-i') . '.csv';
+
+        return response()->streamDownload(function () use ($clients) {
+            $handle = fopen('php://output', 'w');
+            // BOM UTF-8 pour un affichage correct des accents dans Excel
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['Entreprise', 'Contact', 'Nom', 'Email', 'Téléphone', 'Statut', 'Date de création'], ';');
+
+            foreach ($clients as $client) {
+                fputcsv($handle, [
+                    $client->company_name,
+                    $client->contact_name,
+                    $client->user->name,
+                    $client->email,
+                    $client->phone,
+                    $client->is_active ? 'Actif' : 'Inactif',
+                    $client->created_at->format('d/m/Y'),
+                ], ';');
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    /**
+     * Requête de base filtrée par recherche, partagée entre l'index et l'export
+     */
+    private function searchQuery(string $search)
+    {
+        return Client::with('user')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('company_name', 'like', "%{$search}%")
@@ -35,12 +83,7 @@ class ClientController extends Controller
                                 ->orWhere('email', 'like', "%{$search}%");
                         });
                 });
-            })
-            ->orderBy('company_name', 'asc')
-            ->paginate(20)
-            ->withQueryString();
-
-        return view('admin.clients.index', compact('clients', 'search'));
+            });
     }
 
     /**

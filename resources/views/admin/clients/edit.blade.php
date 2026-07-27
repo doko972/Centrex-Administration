@@ -1,6 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
+<x-breadcrumbs :items="[
+    ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+    ['label' => 'Clients', 'url' => route('admin.clients.index')],
+    ['label' => $client->company_name, 'url' => route('admin.clients.show', $client)],
+    ['label' => 'Modifier'],
+]" />
 <div class="page-header">
     <h1 class="page-title">
         Modifier le Client

@@ -109,6 +109,20 @@
 
                 <!-- Desktop Actions -->
                 <div class="navbar-actions">
+                    @auth
+                    @if(Auth::user()->isAdmin())
+                        <form method="GET" action="{{ route('admin.search') }}" style="display: flex;">
+                            <input
+                                type="search"
+                                name="q"
+                                value="{{ request()->routeIs('admin.search') ? request()->query('q') : '' }}"
+                                class="form-input"
+                                placeholder="Rechercher..."
+                                style="width: 180px; padding: 0.5rem 0.75rem; font-size: 0.875rem;"
+                            >
+                        </form>
+                    @endif
+                    @endauth
                     <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
                         <span class="theme-icon-light">
                             <dotlottie-player src="{{ asset('icons/icon-sun.json') }}" background="transparent" speed="1" style="width: 24px; height: 24px;" loop hover></dotlottie-player>
@@ -194,6 +208,12 @@
 
                     @auth
                     @if(Auth::user()->isAdmin())
+                        <a href="{{ route('admin.search') }}" class="mobile-nav-link {{ request()->routeIs('admin.search') ? 'active' : '' }}" onclick="closeMobileMenu()">
+                            <span class="mobile-nav-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </span>
+                            Recherche
+                        </a>
                         <a href="{{ route('admin.dashboard') }}" class="mobile-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" onclick="closeMobileMenu()">
                             <span class="mobile-nav-icon">
                                 <dotlottie-player src="{{ asset('icons/icon-dashboard.json') }}" background="transparent" speed="1" style="width: 24px; height: 24px;" loop hover></dotlottie-player>

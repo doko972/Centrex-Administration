@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
+<x-breadcrumbs :items="[
+    ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+    ['label' => 'Clients', 'url' => route('admin.clients.index')],
+    ['label' => $client->company_name],
+]" />
 <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
     <h1>Détails du Client</h1>
     <div>

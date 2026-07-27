@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
+<x-breadcrumbs :items="[
+    ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+    ['label' => 'Équipements', 'url' => route('admin.equipment.index')],
+    ['label' => $equipment->name],
+]" />
 <div class="page-header">
     <h1 class="page-title">
         Modifier l'équipement

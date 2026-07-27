@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('centrex:check-status')->everyMinute();
+Schedule::command('ipbx:check-status')->everyMinute();

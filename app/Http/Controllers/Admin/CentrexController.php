@@ -21,6 +21,36 @@ class CentrexController extends Controller
     }
 
     /**
+     * Exporter la liste des centrex au format CSV
+     */
+    public function export()
+    {
+        $centrex = Centrex::orderBy('name', 'asc')->get();
+        $filename = 'centrex-' . now()->format('Y-m-d_H-i') . '.csv';
+
+        return response()->streamDownload(function () use ($centrex) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['Nom', 'Adresse IP', 'Port', 'Statut', 'Actif', 'Dernière vérification'], ';');
+
+            foreach ($centrex as $item) {
+                fputcsv($handle, [
+                    $item->name,
+                    $item->ip_address,
+                    $item->port,
+                    $item->status,
+                    $item->is_active ? 'Oui' : 'Non',
+                    $item->last_check?->format('d/m/Y H:i') ?? '-',
+                ], ';');
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    /**
      * Afficher le formulaire de création
      */
     public function create()

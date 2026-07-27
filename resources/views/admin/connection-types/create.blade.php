@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
+<x-breadcrumbs :items="[
+    ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+    ['label' => 'Types de connexion', 'url' => route('admin.connection-types.index')],
+    ['label' => 'Nouveau'],
+]" />
 <div class="page-header">
     <h1 class="page-title">
         Nouveau type de connexion

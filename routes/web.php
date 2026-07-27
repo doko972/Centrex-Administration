@@ -24,6 +24,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\GlobalSearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -99,6 +100,12 @@ Route::middleware(['auth', 'two_factor', 'must.change.password', 'admin'])->pref
     // Journal d'audit
     Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
 
+    // Recherche globale
+    Route::get('/search', [GlobalSearchController::class, 'index'])->name('search');
+
+    // Export CSV (avant la route resource pour éviter le conflit avec /clients/{client})
+    Route::get('/clients/export', [ClientController::class, 'export'])->name('clients.export');
+
     // Routes CRUD Clients
     Route::resource('clients', ClientController::class);
 
@@ -134,6 +141,9 @@ Route::middleware(['auth', 'two_factor', 'must.change.password', 'admin'])->pref
         return redirect($url);
     })->where('any', '(?!view|proxy|create|edit).*');
 
+    // Export CSV (avant la route resource pour éviter le conflit avec /centrex/{centrex})
+    Route::get('/centrex/export', [CentrexController::class, 'export'])->name('centrex.export');
+
     // Routes CRUD Centrex (après les routes proxy pour éviter les conflits)
     Route::resource('centrex', CentrexController::class);
 
@@ -151,6 +161,9 @@ Route::middleware(['auth', 'two_factor', 'must.change.password', 'admin'])->pref
         $url = "/admin/ipbx/{$ipbx_id}/proxy/admin/{$any}" . ($query ? "?{$query}" : "");
         return redirect($url);
     })->where('any', '(?!view|proxy|create|edit|show|ping).*');
+
+    // Export CSV (avant la route resource pour éviter le conflit avec /ipbx/{ipbx})
+    Route::get('/ipbx/export', [IpbxController::class, 'export'])->name('ipbx.export');
 
     // Routes CRUD IPBX
     Route::resource('ipbx', IpbxController::class);

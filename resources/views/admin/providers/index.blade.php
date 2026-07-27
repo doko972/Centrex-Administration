@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+<x-breadcrumbs :items="[
+    ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+    ['label' => 'Fournisseurs'],
+]" />
 <div class="page-header">
     <h1 class="page-title">
         Fournisseurs

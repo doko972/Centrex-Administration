@@ -72,4 +72,28 @@ class Ipbx extends Model
         return $this->belongsToMany(Client::class, 'client_ipbx')
                     ->withTimestamps();
     }
+
+    /**
+     * Vérifier la joignabilité (ping ICMP) et mettre à jour le statut.
+     * Partagé entre le bouton "Ping" manuel et la vérification automatique planifiée.
+     */
+    public function checkAndUpdateStatus(): string
+    {
+        $ip = $this->ip_address;
+
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            exec('ping -n 1 -w 3000 ' . escapeshellarg($ip), $output, $result);
+        } else {
+            exec('ping -c 1 -W 3 ' . escapeshellarg($ip), $output, $result);
+        }
+
+        $status = $result === 0 ? 'online' : 'offline';
+
+        $this->update([
+            'status' => $status,
+            'last_ping' => now(),
+        ]);
+
+        return $status;
+    }
 }
