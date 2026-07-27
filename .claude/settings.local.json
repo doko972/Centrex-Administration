@@ -5,7 +5,8 @@
       "Bash(php artisan optimize:clear:*)",
       "Bash(php artisan config:clear:*)",
       "Bash(php artisan:*)",
-      "Bash(php artisan view:clear:*)"
+      "Bash(php artisan view:clear:*)",
+      "Bash(php artisan *)"
     ]
   }
 }

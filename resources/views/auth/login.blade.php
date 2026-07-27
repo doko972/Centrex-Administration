@@ -104,12 +104,13 @@
     </script>
     @endpush
 
-    <div class="form-group">
+    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
         <label class="custom-checkbox">
             <input type="checkbox" name="remember">
             <span class="checkmark"></span>
             <span>Se souvenir de moi</span>
         </label>
+        <a href="{{ route('password.request') }}" style="font-size: 0.875rem;">Mot de passe oublié ?</a>
     </div>
 
     <button type="submit" class="btn btn-primary btn-block btn-lg">

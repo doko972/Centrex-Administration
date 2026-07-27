@@ -127,7 +127,7 @@
                         </button>
 
                         <div class="dropdown-menu" id="user-dropdown">
-                            <a href="#" class="dropdown-item">
+                            <a href="{{ route('profile.edit') }}" class="dropdown-item">
                                 <span class="dropdown-icon">
                                     <dotlottie-player src="{{ asset('icons/icon-profile.json') }}" background="transparent" speed="1" style="width: 20px; height: 20px;" loop hover></dotlottie-player>
                                 </span>
@@ -259,6 +259,13 @@
                 </div>
 
                 <div class="mobile-nav-actions">
+                    <a href="{{ route('profile.edit') }}" class="mobile-action-btn" onclick="closeMobileMenu()">
+                        <span class="mobile-action-icon">
+                            <dotlottie-player src="{{ asset('icons/icon-profile.json') }}" background="transparent" speed="1" style="width: 20px; height: 20px;"></dotlottie-player>
+                        </span>
+                        Profil
+                    </a>
+
                     <button type="button" id="mobile-theme-toggle" class="mobile-action-btn">
                         <span class="mobile-theme-icon-light">
                             <dotlottie-player src="{{ asset('icons/icon-sun.json') }}" background="transparent" speed="1" style="width: 20px; height: 20px;"></dotlottie-player>

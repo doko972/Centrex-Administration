@@ -20,6 +20,9 @@ use App\Http\Controllers\Client\IpbxProxyController;
 use App\Http\Controllers\SuperClient\DashboardController as SuperClientDashboardController;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Auth\TwoFactorController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,6 +52,14 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])
         ->middleware('throttle:5,1'); // Max 5 tentatives par minute par IP
+
+    // Mot de passe oublié
+    Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->middleware('throttle:3,1')
+        ->name('password.email');
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.store');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -64,6 +75,13 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'two_factor'])->group(function () {
     Route::get('/password/change', [ForcePasswordChangeController::class, 'show'])->name('password.force-change');
     Route::post('/password/change', [ForcePasswordChangeController::class, 'update'])->name('password.force-change.update');
+});
+
+// Profil utilisateur (commun aux 3 rôles)
+Route::middleware(['auth', 'two_factor', 'must.change.password'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'updateInfo'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 });
 
 /*

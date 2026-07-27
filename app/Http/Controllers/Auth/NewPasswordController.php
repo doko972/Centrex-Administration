@@ -33,7 +33,15 @@ class NewPasswordController extends Controller
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => [
+                'required',
+                'confirmed',
+                Rules\Password::min(8)->mixedCase()->numbers()->symbols(),
+            ],
+        ], [
+            'password.required' => 'Le nouveau mot de passe est obligatoire.',
+            'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
+            'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
         ]);
 
         // Here we will attempt to reset the user's password. If it is successful we
@@ -51,12 +59,18 @@ class NewPasswordController extends Controller
             }
         );
 
+        $messages = [
+            Password::PASSWORD_RESET => "Votre mot de passe a été réinitialisé avec succès. Vous pouvez vous connecter.",
+            Password::INVALID_TOKEN => "Ce lien de réinitialisation est invalide ou a expiré.",
+            Password::INVALID_USER => "Aucun compte n'est associé à cette adresse email.",
+        ];
+
         // If the password was successfully reset, we will redirect the user back to
         // the application's home authenticated view. If there is an error we can
         // redirect them back to where they came from with their error message.
         return $status == Password::PASSWORD_RESET
-                    ? redirect()->route('login')->with('status', __($status))
+                    ? redirect()->route('login')->with('status', $messages[$status])
                     : back()->withInput($request->only('email'))
-                        ->withErrors(['email' => __($status)]);
+                        ->withErrors(['email' => $messages[$status] ?? "Une erreur est survenue. Veuillez réessayer."]);
     }
 }
