@@ -26,6 +26,18 @@ class IsClient
             abort(403, 'Accès refusé. Cette page est réservée aux clients.');
         }
 
+        // Client désactivé (ou sans fiche client) : on coupe la session en cours, proxy FreePBX compris
+        $client = Auth::user()->client;
+
+        if (!$client || !$client->is_active) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')
+                ->with('error', 'Votre compte est désactivé. Veuillez contacter votre administrateur.');
+        }
+
         return $next($request);
     }
 }

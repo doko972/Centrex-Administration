@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
+use App\Services\FreePbxSessionStore;
 use GuzzleHttp\Cookie\CookieJar;
 
 class IpbxProxyController extends Controller
@@ -42,27 +43,23 @@ class IpbxProxyController extends Controller
      */
     private function getCookieJar(int $ipbxId): CookieJar
     {
-        $sessionKey = "ipbx_cookies_{$ipbxId}";
-        $cookieData = session($sessionKey, []);
-
-        return new CookieJar(false, $cookieData);
+        return $this->freePbxSessions()->cookieJar('ipbx', $ipbxId);
     }
 
     /**
-     * Sauvegarder le CookieJar en session
+     * Sauvegarder le CookieJar (hors session Laravel, voir FreePbxSessionStore)
      */
     private function saveCookieJar(int $ipbxId, CookieJar $jar): void
     {
-        $sessionKey = "ipbx_cookies_{$ipbxId}";
-        session([$sessionKey => $jar->toArray()]);
+        $this->freePbxSessions()->saveCookieJar('ipbx', $ipbxId, $jar);
     }
 
     /**
-     * Vérifier si on est authentifié sur l'IPBX
+     * Vérifier si on est authentifié sur le FreePBX
      */
     private function isAuthenticated(int $ipbxId): bool
     {
-        return session("ipbx_logged_in_{$ipbxId}", false);
+        return $this->freePbxSessions()->isAuthenticated('ipbx', $ipbxId);
     }
 
     /**
@@ -70,7 +67,12 @@ class IpbxProxyController extends Controller
      */
     private function setAuthenticated(int $ipbxId, bool $value = true): void
     {
-        session(["ipbx_logged_in_{$ipbxId}" => $value]);
+        $this->freePbxSessions()->setAuthenticated('ipbx', $ipbxId, $value);
+    }
+
+    private function freePbxSessions(): FreePbxSessionStore
+    {
+        return app(FreePbxSessionStore::class);
     }
 
     /**
@@ -161,7 +163,9 @@ class IpbxProxyController extends Controller
 
         // Si pas encore authentifié, se connecter d'abord
         if (!$this->isAuthenticated($ipbx->id)) {
-            if (!$this->loginToFreePBX($ipbx, $cookieJar)) {
+            // Une seule requête se connecte ; les requêtes parallèles attendent puis réutilisent sa session
+            $loggedIn = $this->freePbxSessions()->ensureLoggedIn('ipbx', $ipbx->id, fn () => $this->loginToFreePBX($ipbx, $cookieJar));
+            if (!$loggedIn) {
                 return response('Erreur de connexion au FreePBX', 401);
             }
             // Recharger le cookie jar après login
@@ -335,7 +339,12 @@ class IpbxProxyController extends Controller
                 (str_contains($body, 'id="loginform"') || str_contains($body, 'id="login_form"'))) {
                 Log::info("Session expired for IPBX {$ipbx->id}, re-authenticating...");
                 $this->setAuthenticated($ipbx->id, false);
-                return $this->proxy($request, $ipbx, $any);
+
+                // Réessayer une seule fois (évite une boucle si FreePBX renvoie toujours le login)
+                if (!$request->attributes->get('freepbx_retried')) {
+                    $request->attributes->set('freepbx_retried', true);
+                    return $this->proxy($request, $ipbx, $any);
+                }
             }
 
             // Assets
@@ -395,11 +404,9 @@ class IpbxProxyController extends Controller
                 Log::info("Got {$statusCode} for IPBX {$ipbx->id}, re-authenticating...");
                 $this->setAuthenticated($ipbx->id, false);
 
-                if (!session("ipbx_retry_{$ipbx->id}")) {
-                    session(["ipbx_retry_{$ipbx->id}" => true]);
-                    $result = $this->proxy($request, $ipbx, $any);
-                    session()->forget("ipbx_retry_{$ipbx->id}");
-                    return $result;
+                if (!$request->attributes->get('freepbx_retried')) {
+                    $request->attributes->set('freepbx_retried', true);
+                    return $this->proxy($request, $ipbx, $any);
                 }
             }
 

@@ -7,6 +7,7 @@ use App\Models\Centrex;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
+use App\Services\FreePbxSessionStore;
 use GuzzleHttp\Cookie\CookieJar;
 
 class AdminCentrexProxyController extends Controller
@@ -16,27 +17,23 @@ class AdminCentrexProxyController extends Controller
      */
     private function getCookieJar(int $centrexId): CookieJar
     {
-        $sessionKey = "admin_centrex_cookies_{$centrexId}";
-        $cookieData = session($sessionKey, []);
-
-        return new CookieJar(false, $cookieData);
+        return $this->freePbxSessions()->cookieJar('admin_centrex', $centrexId);
     }
 
     /**
-     * Sauvegarder le CookieJar en session
+     * Sauvegarder le CookieJar (hors session Laravel, voir FreePbxSessionStore)
      */
     private function saveCookieJar(int $centrexId, CookieJar $jar): void
     {
-        $sessionKey = "admin_centrex_cookies_{$centrexId}";
-        session([$sessionKey => $jar->toArray()]);
+        $this->freePbxSessions()->saveCookieJar('admin_centrex', $centrexId, $jar);
     }
 
     /**
-     * Vérifier si on est authentifié sur le centrex
+     * Vérifier si on est authentifié sur le FreePBX
      */
     private function isAuthenticated(int $centrexId): bool
     {
-        return session("admin_centrex_logged_in_{$centrexId}", false);
+        return $this->freePbxSessions()->isAuthenticated('admin_centrex', $centrexId);
     }
 
     /**
@@ -44,7 +41,12 @@ class AdminCentrexProxyController extends Controller
      */
     private function setAuthenticated(int $centrexId, bool $value = true): void
     {
-        session(["admin_centrex_logged_in_{$centrexId}" => $value]);
+        $this->freePbxSessions()->setAuthenticated('admin_centrex', $centrexId, $value);
+    }
+
+    private function freePbxSessions(): FreePbxSessionStore
+    {
+        return app(FreePbxSessionStore::class);
     }
 
     /**
@@ -119,7 +121,9 @@ class AdminCentrexProxyController extends Controller
         $cookieJar = $this->getCookieJar($centrex->id);
 
         if (!$this->isAuthenticated($centrex->id)) {
-            if (!$this->loginToFreePBX($centrex, $cookieJar)) {
+            // Une seule requête se connecte ; les requêtes parallèles attendent puis réutilisent sa session
+            $loggedIn = $this->freePbxSessions()->ensureLoggedIn('admin_centrex', $centrex->id, fn () => $this->loginToFreePBX($centrex, $cookieJar));
+            if (!$loggedIn) {
                 return response('Erreur de connexion au FreePBX', 401);
             }
             $cookieJar = $this->getCookieJar($centrex->id);
@@ -294,7 +298,12 @@ class AdminCentrexProxyController extends Controller
             if (str_contains($contentType, 'text/html') &&
                 (str_contains($body, 'id="loginform"') || str_contains($body, 'id="login_form"'))) {
                 $this->setAuthenticated($centrex->id, false);
-                return $this->proxy($request, $centrex, $any);
+
+                // Réessayer une seule fois (évite une boucle si FreePBX renvoie toujours le login)
+                if (!$request->attributes->get('freepbx_retried')) {
+                    $request->attributes->set('freepbx_retried', true);
+                    return $this->proxy($request, $centrex, $any);
+                }
             }
 
             if ($this->isAsset($path, $contentType)) {
@@ -345,11 +354,9 @@ class AdminCentrexProxyController extends Controller
 
             if (in_array($statusCode, [401, 403])) {
                 $this->setAuthenticated($centrex->id, false);
-                if (!session("admin_centrex_retry_{$centrex->id}")) {
-                    session(["admin_centrex_retry_{$centrex->id}" => true]);
-                    $result = $this->proxy($request, $centrex, $any);
-                    session()->forget("admin_centrex_retry_{$centrex->id}");
-                    return $result;
+                if (!$request->attributes->get('freepbx_retried')) {
+                    $request->attributes->set('freepbx_retried', true);
+                    return $this->proxy($request, $centrex, $any);
                 }
             }
 

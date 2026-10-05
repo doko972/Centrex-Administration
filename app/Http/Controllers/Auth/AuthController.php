@@ -28,9 +28,25 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($credentials, $request->filled('remember'))) {
-            $request->session()->regenerate();
-
             $user = Auth::user();
+
+            // Client désactivé par un administrateur : connexion refusée
+            if ($user->isClient() && !$user->client?->is_active) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                Log::channel('auth')->warning('Connexion refusée : compte client désactivé', [
+                    'email' => $credentials['email'],
+                    'ip' => $request->ip(),
+                ]);
+
+                return back()->withErrors([
+                    'email' => 'Votre compte est désactivé. Veuillez contacter votre administrateur.',
+                ])->onlyInput('email');
+            }
+
+            $request->session()->regenerate();
 
             // Logger la connexion réussie
             Log::channel('auth')->info('Connexion réussie', [

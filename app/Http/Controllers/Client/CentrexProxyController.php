@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
+use App\Services\FreePbxSessionStore;
 use GuzzleHttp\Cookie\CookieJar;
 
 class CentrexProxyController extends Controller
@@ -42,27 +43,23 @@ class CentrexProxyController extends Controller
      */
     private function getCookieJar(int $centrexId): CookieJar
     {
-        $sessionKey = "centrex_cookies_{$centrexId}";
-        $cookieData = session($sessionKey, []);
-
-        return new CookieJar(false, $cookieData);
+        return $this->freePbxSessions()->cookieJar('centrex', $centrexId);
     }
 
     /**
-     * Sauvegarder le CookieJar en session
+     * Sauvegarder le CookieJar (hors session Laravel, voir FreePbxSessionStore)
      */
     private function saveCookieJar(int $centrexId, CookieJar $jar): void
     {
-        $sessionKey = "centrex_cookies_{$centrexId}";
-        session([$sessionKey => $jar->toArray()]);
+        $this->freePbxSessions()->saveCookieJar('centrex', $centrexId, $jar);
     }
 
     /**
-     * Vérifier si on est authentifié sur le centrex
+     * Vérifier si on est authentifié sur le FreePBX
      */
     private function isAuthenticated(int $centrexId): bool
     {
-        return session("centrex_logged_in_{$centrexId}", false);
+        return $this->freePbxSessions()->isAuthenticated('centrex', $centrexId);
     }
 
     /**
@@ -70,7 +67,12 @@ class CentrexProxyController extends Controller
      */
     private function setAuthenticated(int $centrexId, bool $value = true): void
     {
-        session(["centrex_logged_in_{$centrexId}" => $value]);
+        $this->freePbxSessions()->setAuthenticated('centrex', $centrexId, $value);
+    }
+
+    private function freePbxSessions(): FreePbxSessionStore
+    {
+        return app(FreePbxSessionStore::class);
     }
 
     /**
@@ -178,7 +180,9 @@ class CentrexProxyController extends Controller
 
         // Si pas encore authentifié, se connecter d'abord
         if (!$this->isAuthenticated($centrex->id)) {
-            if (!$this->loginToFreePBX($centrex, $cookieJar)) {
+            // Une seule requête se connecte ; les requêtes parallèles attendent puis réutilisent sa session
+            $loggedIn = $this->freePbxSessions()->ensureLoggedIn('centrex', $centrex->id, fn () => $this->loginToFreePBX($centrex, $cookieJar));
+            if (!$loggedIn) {
                 return response('Erreur de connexion au FreePBX', 401);
             }
             // Recharger le cookie jar après login
@@ -419,8 +423,11 @@ class CentrexProxyController extends Controller
                 Log::info("Session expired for centrex {$centrex->id}, re-authenticating...");
                 $this->setAuthenticated($centrex->id, false);
 
-                // Réessayer la requête
-                return $this->proxy($request, $centrex, $any);
+                // Réessayer une seule fois (évite une boucle si FreePBX renvoie toujours le login)
+                if (!$request->attributes->get('freepbx_retried')) {
+                    $request->attributes->set('freepbx_retried', true);
+                    return $this->proxy($request, $centrex, $any);
+                }
             }
 
             // Assets (JS, CSS, images, fonts) : retourner avec corrections si nécessaire
@@ -488,11 +495,9 @@ class CentrexProxyController extends Controller
                 $this->setAuthenticated($centrex->id, false);
 
                 // Réessayer la requête (une seule fois)
-                if (!session("centrex_retry_{$centrex->id}")) {
-                    session(["centrex_retry_{$centrex->id}" => true]);
-                    $result = $this->proxy($request, $centrex, $any);
-                    session()->forget("centrex_retry_{$centrex->id}");
-                    return $result;
+                if (!$request->attributes->get('freepbx_retried')) {
+                    $request->attributes->set('freepbx_retried', true);
+                    return $this->proxy($request, $centrex, $any);
                 }
             }
 
