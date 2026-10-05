@@ -165,6 +165,12 @@ class CentrexProxyController extends Controller
      */
     public function proxy(Request $request, Centrex $centrex, $any = null)
     {
+        // Le moniteur réseau du dashboard FreePBX (netmon) est un flux SSE sans fin : le proxy le mettrait
+        // en tampon jusqu'au timeout PHP (60 s) en bloquant un worker. 204 = le navigateur cesse de le rouvrir.
+        if ($request->query('command') === 'netmon') {
+            return response('', 204);
+        }
+
         $this->checkAccess($centrex);
 
         // Récupérer le CookieJar de la session

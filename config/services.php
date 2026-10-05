@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    /*
+    | API OVHcloud — token créé sur https://api.ovh.com/createToken/
+    | Endpoints : ovh-eu https://eu.api.ovh.com/1.0 | ovh-ca https://ca.api.ovh.com/1.0
+    */
+    'ovh' => [
+        'endpoint' => env('OVH_API_ENDPOINT', 'https://eu.api.ovh.com/1.0'),
+        'application_key' => env('OVH_APPLICATION_KEY'),
+        'application_secret' => env('OVH_APPLICATION_SECRET'),
+        'consumer_key' => env('OVH_CONSUMER_KEY'),
+        'timeout' => env('OVH_API_TIMEOUT', 15),
+    ],
+
 ];

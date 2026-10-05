@@ -19,12 +19,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'superclient' => \App\Http\Middleware\IsSuperClient::class,
             'must.change.password' => \App\Http\Middleware\EnsurePasswordIsChanged::class,
             'two_factor' => \App\Http\Middleware\EnsureTwoFactorVerified::class,
+            'proxy.origin' => \App\Http\Middleware\VerifyProxyOrigin::class,
         ]);
 
         // Rediriger vers /login quand la session expire
         $middleware->redirectGuestsTo('/login');
 
-        // Exclure les routes du proxy de la vérification CSRF
+        // Exclure les routes du proxy de la vérification CSRF (formulaires FreePBX sans jeton Laravel) :
+        // elles sont protégées à la place par le middleware 'proxy.origin' (contrôle de provenance)
         $middleware->validateCsrfTokens(except: [
             'client/centrex/*/proxy',
             'client/centrex/*/proxy/*',

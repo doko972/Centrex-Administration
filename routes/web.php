@@ -125,9 +125,11 @@ Route::middleware(['auth', 'two_factor', 'must.change.password', 'admin'])->pref
     // Proxy Admin vers FreePBX (Centrex) - DOIT être défini AVANT les routes resource centrex
     Route::get('/centrex/{centrex}/view', [AdminCentrexProxyController::class, 'show'])->name('centrex.view');
     Route::any('/centrex/{centrex}/proxy/{any}', [AdminCentrexProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->where('any', '.*')
         ->name('centrex.proxy');
     Route::any('/centrex/{centrex}/proxy', [AdminCentrexProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->name('centrex.proxy.root');
 
     // Routes pour associer Centrex ↔ Clients (depuis la fiche centrex)
@@ -150,9 +152,11 @@ Route::middleware(['auth', 'two_factor', 'must.change.password', 'admin'])->pref
     // Proxy Admin vers FreePBX (IPBX) - DOIT être défini AVANT les routes resource ipbx
     Route::get('/ipbx/{ipbx}/view', [AdminIpbxProxyController::class, 'show'])->name('ipbx.view');
     Route::any('/ipbx/{ipbx}/proxy/{any}', [AdminIpbxProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->where('any', '.*')
         ->name('ipbx.proxy');
     Route::any('/ipbx/{ipbx}/proxy', [AdminIpbxProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->name('ipbx.proxy.root');
 
     // Fallback IPBX : capturer les URLs mal formées
@@ -182,9 +186,11 @@ Route::middleware(['auth', 'two_factor', 'must.change.password', 'client'])->pre
     // Proxy Laravel vers FreePBX (Centrex)
     Route::get('/centrex/{centrex}/view', [CentrexProxyController::class, 'show'])->name('centrex.view');
     Route::any('/centrex/{centrex}/proxy/{any}', [CentrexProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->where('any', '.*')
         ->name('centrex.proxy');
     Route::any('/centrex/{centrex}/proxy', [CentrexProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->name('centrex.proxy.root');
 
     // Fallback Centrex : capturer les URLs mal formées (sans /proxy/) et les rediriger
@@ -197,9 +203,11 @@ Route::middleware(['auth', 'two_factor', 'must.change.password', 'client'])->pre
     // Proxy Laravel vers FreePBX (IPBX)
     Route::get('/ipbx/{ipbx}/view', [IpbxProxyController::class, 'show'])->name('ipbx.view');
     Route::any('/ipbx/{ipbx}/proxy/{any}', [IpbxProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->where('any', '.*')
         ->name('ipbx.proxy');
     Route::any('/ipbx/{ipbx}/proxy', [IpbxProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->name('ipbx.proxy.root');
 
     // Fallback IPBX : capturer les URLs mal formées
@@ -222,9 +230,11 @@ Route::middleware(['auth', 'two_factor', 'must.change.password', 'superclient'])
     // Proxy vers FreePBX (Centrex) - réutilise le controller client
     Route::get('/centrex/{centrex}/view', [CentrexProxyController::class, 'show'])->name('centrex.view');
     Route::any('/centrex/{centrex}/proxy/{any}', [CentrexProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->where('any', '.*')
         ->name('centrex.proxy');
     Route::any('/centrex/{centrex}/proxy', [CentrexProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->name('centrex.proxy.root');
 
     // Fallback Centrex
@@ -237,9 +247,11 @@ Route::middleware(['auth', 'two_factor', 'must.change.password', 'superclient'])
     // Proxy vers FreePBX (IPBX) - réutilise le controller client
     Route::get('/ipbx/{ipbx}/view', [IpbxProxyController::class, 'show'])->name('ipbx.view');
     Route::any('/ipbx/{ipbx}/proxy/{any}', [IpbxProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->where('any', '.*')
         ->name('ipbx.proxy');
     Route::any('/ipbx/{ipbx}/proxy', [IpbxProxyController::class, 'proxy'])
+        ->middleware('proxy.origin')
         ->name('ipbx.proxy.root');
 
     // Fallback IPBX
