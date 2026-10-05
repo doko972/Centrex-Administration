@@ -7,6 +7,7 @@ use App\Models\Centrex;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
+use App\Services\FreePbxProxyRequest;
 use App\Services\FreePbxSessionStore;
 use GuzzleHttp\Cookie\CookieJar;
 
@@ -168,67 +169,10 @@ class AdminCentrexProxyController extends Controller
                 ],
             ]);
 
-            $options = [];
             $method = strtoupper($request->method());
 
-            if ($method === 'POST') {
-                $contentType = $request->header('Content-Type', '');
-
-                if (str_contains($contentType, 'multipart/form-data') || count($request->allFiles()) > 0) {
-                    $multipart = [];
-
-                    $flattenArray = function($array, $prefix = '') use (&$flattenArray, &$multipart) {
-                        foreach ($array as $key => $value) {
-                            $name = $prefix ? "{$prefix}[{$key}]" : $key;
-                            if (is_array($value)) {
-                                $flattenArray($value, $name);
-                            } else {
-                                $multipart[] = [
-                                    'name' => $name,
-                                    'contents' => (string) $value,
-                                ];
-                            }
-                        }
-                    };
-
-                    $flattenArray($request->all());
-
-                    foreach ($request->allFiles() as $key => $files) {
-                        $files = is_array($files) ? $files : [$files];
-                        foreach ($files as $index => $file) {
-                            if ($file && $file->isValid()) {
-                                $multipart[] = [
-                                    'name' => is_array($request->file($key)) ? "{$key}[{$index}]" : $key,
-                                    'contents' => fopen($file->getRealPath(), 'r'),
-                                    'filename' => $file->getClientOriginalName(),
-                                ];
-                            }
-                        }
-                    }
-
-                    if (!empty($multipart)) {
-                        $options['multipart'] = $multipart;
-                    } else {
-                        $options['form_params'] = $request->all();
-                    }
-                } else {
-                    $options['form_params'] = $request->all();
-
-                    // Fix IVR entries
-                    if (str_contains($targetUrl, 'display=ivr') && isset($options['form_params']['entries'])) {
-                        $entries = $options['form_params']['entries'];
-                        if (isset($entries['ivr_ret']) && is_array($entries['ivr_ret'])) {
-                            $ivrRet = array_values(array_filter($entries['ivr_ret'], function($v) {
-                                return $v !== null;
-                            }));
-                            if (empty($ivrRet) && isset($entries['ext']) && is_array($entries['ext'])) {
-                                $ivrRet = array_fill(0, count($entries['ext']), '0');
-                            }
-                            $options['form_params']['entries']['ivr_ret'] = $ivrRet;
-                        }
-                    }
-                }
-            }
+            // Corps et en-têtes relayés tels que le navigateur les a envoyés (voir FreePbxProxyRequest)
+            $options = FreePbxProxyRequest::options($request);
 
             $response = $client->request($method, $targetUrl, $options);
 

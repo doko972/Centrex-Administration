@@ -22,6 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'proxy.origin' => \App\Http\Middleware\VerifyProxyOrigin::class,
         ]);
 
+        // Proxy FreePBX : les formulaires doivent arriver intacts (espaces conservés, champs vides non convertis en null)
+        $isFreePbxProxy = fn (Request $request) => (bool) preg_match('#^(admin|client|superclient)/(centrex|ipbx)/\d+/proxy(/|$)#', $request->path());
+        $middleware->trimStrings(except: [$isFreePbxProxy]);
+        $middleware->convertEmptyStringsToNull(except: [$isFreePbxProxy]);
+
         // Rediriger vers /login quand la session expire
         $middleware->redirectGuestsTo('/login');
 
